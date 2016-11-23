@@ -24,7 +24,7 @@
 Yet-an-other type combinator library
 <p>
 
-    <em>67e1c46 — <a href="https://github.com/samoht/depyt ">homepage</a></em><br>
+    <em>c44b684 — <a href="https://github.com/samoht/depyt ">homepage</a></em><br>
 </div>
 <hr width="100%">
 <br>
@@ -94,7 +94,17 @@ The type for fields holding values of type <code class="code"><span class="keywo
 </div>
 
 <pre><span id="VALrecord2"><span class="keyword">val</span> record2</span> : <code class="type">string -><br>       ('a, 'b) <a href="Depyt.html#TYPEfield">field</a> -><br>       ('a, 'c) <a href="Depyt.html#TYPEfield">field</a> -> ('b -> 'c -> 'a) -> 'a <a href="Depyt.html#TYPEt">t</a></code></pre><div class="info ">
-Same as <a href="Depyt.html#VALrecord1"><code class="code"><span class="constructor">Depyt</span>.record1</code></a> but for records with 2 fields.<br>
+Same as <a href="Depyt.html#VALrecord1"><code class="code"><span class="constructor">Depyt</span>.record1</code></a> but for records with 2 fields. e.g.
+<p>
+
+    <pre class="codepre"><code class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;t&nbsp;=&nbsp;{&nbsp;foo:&nbsp;string;&nbsp;bar&nbsp;=&nbsp;int&nbsp;list&nbsp;}
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;t&nbsp;=
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;record2&nbsp;<span class="string">"t"</span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(field&nbsp;<span class="string">"foo"</span>&nbsp;string&nbsp;(<span class="keyword">fun</span>&nbsp;t&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;t.foo))
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(field&nbsp;<span class="string">"bar"</span>&nbsp;(list&nbsp;int)&nbsp;(<span class="keyword">fun</span>&nbsp;t&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;t.bar))
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;@@&nbsp;<span class="keyword">fun</span>&nbsp;foo&nbsp;bar&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;{&nbsp;foo;&nbsp;bar&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;</code></pre><br>
 </div>
 
 <pre><span id="VALrecord3"><span class="keyword">val</span> record3</span> : <code class="type">string -><br>       ('a, 'b) <a href="Depyt.html#TYPEfield">field</a> -><br>       ('a, 'c) <a href="Depyt.html#TYPEfield">field</a> -><br>       ('a, 'd) <a href="Depyt.html#TYPEfield">field</a> -> ('b -> 'c -> 'd -> 'a) -> 'a <a href="Depyt.html#TYPEt">t</a></code></pre><div class="info ">
