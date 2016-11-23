@@ -24,7 +24,7 @@
 Yet-an-other type combinator library
 <p>
 
-    <em>b363e15 — <a href="https://github.com/samoht/depyt ">homepage</a></em><br>
+    <em>ad8e92a — <a href="https://github.com/samoht/depyt ">homepage</a></em><br>
 </div>
 <hr width="100%">
 <br>
@@ -35,25 +35,6 @@ Yet-an-other type combinator library
 The type for runtime representation of values of type <code class="code"><span class="keywordsign">'</span>a</code>.<br>
 </div>
 
-
-<pre><code><span id="TYPEdyn"><span class="keyword">type</span> <code class="type"></code>dyn</span> = </code></pre><table class="typetable">
-<tr>
-<td align="left" valign="top" >
-<code><span class="keyword">|</span></code></td>
-<td align="left" valign="top" >
-<code><span id="TYPEELTdyn.Dyn"><span class="constructor">Dyn</span></span> <span class="keyword">:</span> <code class="type">'a <a href="Depyt.html#TYPEt">t</a> * 'a</code> <span class="keyword">-></span> <code class="type"><a href="Depyt.html#TYPEdyn">dyn</a></code></code></td>
-<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
-The type for dynamic values.<br>
-</div>
-</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
-</tr></table>
-
-
-
-<pre><span id="VALdyn"><span class="keyword">val</span> dyn</span> : <code class="type">'a <a href="Depyt.html#TYPEt">t</a> -> 'a -> <a href="Depyt.html#TYPEdyn">dyn</a></code></pre><div class="info ">
-<code class="code">dyn t v</code> is a dynamic value: a pair of a runtime representation
-    of a type and a value of this type.<br>
-</div>
 <br>
 <h1 id="1_Primitives">Primitives</h1><br>
 
@@ -91,7 +72,7 @@ The type for fields holding values of type <code class="code"><span class="keywo
 
 
 <pre><span id="VALfield"><span class="keyword">val</span> field</span> : <code class="type">string -> 'a <a href="Depyt.html#TYPEt">t</a> -> ('b -> 'a) -> ('b, 'a) <a href="Depyt.html#TYPEfield">field</a></code></pre><div class="info ">
-<code class="code">field n t g</code> is the representation of the field <code class="code">n</code> of type <code class="code">t</code>
+<code class="code">field1 n t g</code> is the representation of the field <code class="code">n</code> of type <code class="code">t</code>
     with getter <code class="code">g</code>.<br>
 </div>
 
@@ -118,6 +99,18 @@ Same as <a href="Depyt.html#VALrecord1"><code class="code"><span class="construc
 
 <pre><span id="VALrecord3"><span class="keyword">val</span> record3</span> : <code class="type">string -><br>       ('a, 'b) <a href="Depyt.html#TYPEfield">field</a> -><br>       ('a, 'c) <a href="Depyt.html#TYPEfield">field</a> -><br>       ('a, 'd) <a href="Depyt.html#TYPEfield">field</a> -> ('b -> 'c -> 'd -> 'a) -> 'a <a href="Depyt.html#TYPEt">t</a></code></pre><div class="info ">
 Same as <a href="Depyt.html#VALrecord1"><code class="code"><span class="constructor">Depyt</span>.record1</code></a> but for records with 3 fields.<br>
+</div>
+
+<pre><span id="VALrecord4"><span class="keyword">val</span> record4</span> : <code class="type">string -><br>       ('a, 'b) <a href="Depyt.html#TYPEfield">field</a> -><br>       ('a, 'c) <a href="Depyt.html#TYPEfield">field</a> -><br>       ('a, 'd) <a href="Depyt.html#TYPEfield">field</a> -><br>       ('a, 'e) <a href="Depyt.html#TYPEfield">field</a> -> ('b -> 'c -> 'd -> 'e -> 'a) -> 'a <a href="Depyt.html#TYPEt">t</a></code></pre><div class="info ">
+Same as <a href="Depyt.html#VALrecord1"><code class="code"><span class="constructor">Depyt</span>.record1</code></a> but for records with 4 fields.<br>
+</div>
+
+<pre><span id="VALrecord5"><span class="keyword">val</span> record5</span> : <code class="type">string -><br>       ('a, 'b) <a href="Depyt.html#TYPEfield">field</a> -><br>       ('a, 'c) <a href="Depyt.html#TYPEfield">field</a> -><br>       ('a, 'd) <a href="Depyt.html#TYPEfield">field</a> -><br>       ('a, 'e) <a href="Depyt.html#TYPEfield">field</a> -><br>       ('a, 'f) <a href="Depyt.html#TYPEfield">field</a> -> ('b -> 'c -> 'd -> 'e -> 'f -> 'a) -> 'a <a href="Depyt.html#TYPEt">t</a></code></pre><div class="info ">
+Same as <a href="Depyt.html#VALrecord1"><code class="code"><span class="constructor">Depyt</span>.record1</code></a> but for records with 5 fields.<br>
+</div>
+
+<pre><span id="VALrecord6"><span class="keyword">val</span> record6</span> : <code class="type">string -><br>       ('a, 'b) <a href="Depyt.html#TYPEfield">field</a> -><br>       ('a, 'c) <a href="Depyt.html#TYPEfield">field</a> -><br>       ('a, 'd) <a href="Depyt.html#TYPEfield">field</a> -><br>       ('a, 'e) <a href="Depyt.html#TYPEfield">field</a> -><br>       ('a, 'f) <a href="Depyt.html#TYPEfield">field</a> -><br>       ('a, 'g) <a href="Depyt.html#TYPEfield">field</a> -><br>       ('b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'a) -> 'a <a href="Depyt.html#TYPEt">t</a></code></pre><div class="info ">
+Same as <a href="Depyt.html#VALrecord1"><code class="code"><span class="constructor">Depyt</span>.record1</code></a> but for records with 6 fields.<br>
 </div>
 <br>
 <h1 id="1_Variants">Variants</h1><br>
@@ -172,6 +165,16 @@ The type for representing a variant of type <code class="code"><span class="keyw
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;foo,&nbsp;mkfoo&nbsp;=&nbsp;case0&nbsp;<span class="string">"Foo"</span>&nbsp;<span class="constructor">Foo</span>&nbsp;<span class="keyword">in</span>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;bar,&nbsp;mkbar&nbsp;=&nbsp;case1&nbsp;<span class="string">"Bar"</span>&nbsp;string&nbsp;(<span class="keyword">fun</span>&nbsp;x&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Bar</span>&nbsp;x)&nbsp;<span class="keyword">in</span>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;variant&nbsp;<span class="string">"v"</span>&nbsp;[foo;&nbsp;bar]&nbsp;(<span class="keyword">function</span>&nbsp;<span class="constructor">Foo</span>&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;mkfoo&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Bar</span>&nbsp;x&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;mkbar&nbsp;x)
+&nbsp;&nbsp;&nbsp;&nbsp;</code></pre><br>
+</div>
+
+<pre><span id="VALenum"><span class="keyword">val</span> enum</span> : <code class="type">string -> (string * 'a) list -> 'a <a href="Depyt.html#TYPEt">t</a></code></pre><div class="info ">
+<code class="code">enum n l</code> is a representation of the variant type which has
+    only constant variant case. e.g.
+<p>
+
+    <pre class="codepre"><code class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;t&nbsp;=&nbsp;<span class="constructor">Foo</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Bar</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Toto</span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;t&nbsp;=&nbsp;enum&nbsp;<span class="string">"t"</span>&nbsp;[<span class="string">"Foo"</span>,&nbsp;<span class="constructor">Foo</span>;&nbsp;<span class="string">"Bar"</span>,&nbsp;<span class="constructor">Bar</span>;&nbsp;<span class="string">"Toto"</span>,&nbsp;<span class="constructor">Toto</span>]
 &nbsp;&nbsp;&nbsp;&nbsp;</code></pre><br>
 </div>
 <br>

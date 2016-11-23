@@ -31,14 +31,13 @@
 <code class="code">compare t</code> compares values of type <code class="code">t</code>.
 </div>
 </td></tr>
-<tr><td align="left"><br>D</td></tr>
-<tr><td><a href="Depyt.html#VALdyn">dyn</a> [<a href="Depyt.html">Depyt</a>]</td>
+<tr><td align="left"><br>E</td></tr>
+<tr><td><a href="Depyt.html#VALenum">enum</a> [<a href="Depyt.html">Depyt</a>]</td>
 <td><div class="info">
-<code class="code">dyn t v</code> is a dynamic value: a pair of a runtime representation
-    of a type and a value of this type.
+<code class="code">enum n l</code> is a representation of the variant type which has
+    only constant variant case.
 </div>
 </td></tr>
-<tr><td align="left"><br>E</td></tr>
 <tr><td><a href="Depyt.html#VALequal">equal</a> [<a href="Depyt.html">Depyt</a>]</td>
 <td><div class="info">
 <code class="code">equal t</code> is the equality function between values of type <code class="code">t</code>.
@@ -47,7 +46,7 @@
 <tr><td align="left"><br>F</td></tr>
 <tr><td><a href="Depyt.html#VALfield">field</a> [<a href="Depyt.html">Depyt</a>]</td>
 <td><div class="info">
-<code class="code">field n t g</code> is the representation of the field <code class="code">n</code> of type <code class="code">t</code>
+<code class="code">field1 n t g</code> is the representation of the field <code class="code">n</code> of type <code class="code">t</code>
     with getter <code class="code">g</code>.
 </div>
 </td></tr>
@@ -100,6 +99,21 @@ Same as <a href="Depyt.html#VALrecord1"><code class="code"><span class="construc
 <tr><td><a href="Depyt.html#VALrecord3">record3</a> [<a href="Depyt.html">Depyt</a>]</td>
 <td><div class="info">
 Same as <a href="Depyt.html#VALrecord1"><code class="code"><span class="constructor">Depyt</span>.record1</code></a> but for records with 3 fields.
+</div>
+</td></tr>
+<tr><td><a href="Depyt.html#VALrecord4">record4</a> [<a href="Depyt.html">Depyt</a>]</td>
+<td><div class="info">
+Same as <a href="Depyt.html#VALrecord1"><code class="code"><span class="constructor">Depyt</span>.record1</code></a> but for records with 4 fields.
+</div>
+</td></tr>
+<tr><td><a href="Depyt.html#VALrecord5">record5</a> [<a href="Depyt.html">Depyt</a>]</td>
+<td><div class="info">
+Same as <a href="Depyt.html#VALrecord1"><code class="code"><span class="constructor">Depyt</span>.record1</code></a> but for records with 5 fields.
+</div>
+</td></tr>
+<tr><td><a href="Depyt.html#VALrecord6">record6</a> [<a href="Depyt.html">Depyt</a>]</td>
+<td><div class="info">
+Same as <a href="Depyt.html#VALrecord1"><code class="code"><span class="constructor">Depyt</span>.record1</code></a> but for records with 6 fields.
 </div>
 </td></tr>
 <tr><td align="left"><br>S</td></tr>
