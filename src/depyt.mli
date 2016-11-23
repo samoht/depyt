@@ -40,7 +40,7 @@ type ('a, 'b) field
     record of type ['a]. *)
 
 val field: string -> 'a t -> ('b -> 'a) -> ('b, 'a) field
-(** [field n t g] is the representation of the field [n] of type [t]
+(** [field1 n t g] is the representation of the field [n] of type [t]
     with getter [g]. *)
 
 val record1: string -> ('a, 'b) field -> ('b -> 'a) -> 'a t
@@ -73,6 +73,36 @@ val record3:
   ('a, 'd) field ->
   ('b -> 'c -> 'd -> 'a) -> 'a t
 (** Same as {!record1} but for records with 3 fields. *)
+
+val record4:
+  string ->
+  ('a, 'b) field ->
+  ('a, 'c) field ->
+  ('a, 'd) field ->
+  ('a, 'e) field ->
+  ('b -> 'c -> 'd -> 'e -> 'a) -> 'a t
+(** Same as {!record1} but for records with 4 fields. *)
+
+val record5:
+  string ->
+  ('a, 'b) field ->
+  ('a, 'c) field ->
+  ('a, 'd) field ->
+  ('a, 'e) field ->
+  ('a, 'f) field ->
+  ('b -> 'c -> 'd -> 'e -> 'f -> 'a) -> 'a t
+(** Same as {!record1} but for records with 5 fields. *)
+
+val record6:
+  string ->
+  ('a, 'b) field ->
+  ('a, 'c) field ->
+  ('a, 'd) field ->
+  ('a, 'e) field ->
+  ('a, 'f) field ->
+  ('a, 'g) field ->
+  ('b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'a) -> 'a t
+(** Same as {!record1} but for records with 6 fields. *)
 
 (** {1 Variants} *)
 

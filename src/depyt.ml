@@ -24,12 +24,39 @@ and 'a record = {
 }
 
 and 'a fields =
-  | F1: ('a, 'b) field * ('b -> 'a) -> 'a fields
-  | F2: ('a, 'b) field * ('a, 'c) field * ('b -> 'c -> 'a) -> 'a fields
-  | F3: ('a, 'b) field *
-        ('a, 'c) field *
-        ('a, 'd) field *
-        ('b -> 'c -> 'd -> 'a) -> 'a fields
+  | F1:
+      ('a, 'b) field *
+      ('b -> 'a) -> 'a fields
+  | F2:
+      ('a, 'b) field *
+      ('a, 'c) field *
+      ('b -> 'c -> 'a) -> 'a fields
+  | F3:
+      ('a, 'b) field *
+      ('a, 'c) field *
+      ('a, 'd) field *
+      ('b -> 'c -> 'd -> 'a) -> 'a fields
+  | F4:
+      ('a, 'b) field *
+      ('a, 'c) field *
+      ('a, 'd) field *
+      ('a, 'e) field *
+      ('b -> 'c -> 'd -> 'e -> 'a) -> 'a fields
+  | F5:
+      ('a, 'b) field *
+      ('a, 'c) field *
+      ('a, 'd) field *
+      ('a, 'e) field *
+      ('a, 'f) field *
+      ('b -> 'c -> 'd -> 'e -> 'f -> 'a) -> 'a fields
+  | F6:
+      ('a, 'b) field *
+      ('a, 'c) field *
+      ('a, 'd) field *
+      ('a, 'e) field *
+      ('a, 'f) field *
+      ('a, 'g) field *
+      ('b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'a) -> 'a fields
 
 and ('a, 'b) field = {
   fname: string;
@@ -77,9 +104,23 @@ let option a = Option a
 
 let field fname ftype fget = { fname; ftype; fget }
 
-let record1 rname x y     = Record { rname; rfields = F1 (x, y) }
-let record2 rname x y z   = Record { rname; rfields = F2 (x, y, z) }
-let record3 rname x y z a = Record { rname; rfields = F3 (x, y, z, a) }
+let record1 rname a b =
+  Record { rname; rfields = F1 (a, b) }
+
+let record2 rname a b c =
+  Record { rname; rfields = F2 (a, b, c) }
+
+let record3 rname a b c d =
+  Record { rname; rfields = F3 (a, b, c, d) }
+
+let record4 rname a b c d e =
+  Record { rname; rfields = F4 (a, b, c, d, e) }
+
+let record5 rname a b c d e f =
+  Record { rname; rfields = F5 (a, b, c, d, e, f) }
+
+let record6 rname a b c d e f g =
+  Record { rname; rfields = F6 (a, b, c, d, e, f, g) }
 
 (* variants *)
 
@@ -113,9 +154,13 @@ let variant vname vcases vget =
   Variant { vname; vcases; vget }
 
 let fields = function
-  | F1 (f, _)       -> [Field f]
-  | F2 (f, g, _)    -> [Field f; Field g]
-  | F3 (f, g, h, _) -> [Field f; Field g; Field h]
+| F1 (a, _)                -> [Field a]
+| F2 (a, b, _)             -> [Field a; Field b]
+| F3 (a, b, c, _)          -> [Field a; Field b; Field c]
+| F4 (a, b, c, d, _)       -> [Field a; Field b; Field c; Field d]
+| F5 (a, b, c, d, e, _)    -> [Field a; Field b; Field c; Field d; Field e]
+| F6 (a, b, c, d, e, f, _) -> [Field a; Field b; Field c; Field d; Field e;
+                               Field f]
 
 type 'a equal = 'a -> 'a -> bool
 
@@ -268,14 +313,26 @@ module Pp = struct
 
   and record: type a. a record -> a Fmt.t = fun r ppf x ->
     match r.rfields with
-    | F1 (f, _)       ->
-      Fmt.pf ppf "@[{ %s = %a }@]" f.fname (field f) x
-    | F2 (f, g, _)    ->
-      Fmt.pf ppf "@[{ %s = %a; %s = %a }@]"
-        f.fname (field f) x g.fname (field g) x
-    | F3 (f, g, h, c) ->
-      Fmt.pf ppf "@[{ %s = %a; %s = %a; %s = %a }@]"
-        f.fname (field f) x g.fname (field g) x h.fname (field h) x
+    | F1 (a, _)       ->
+        Fmt.pf ppf "@[{ %s = %a }@]" a.fname (field a) x
+    | F2 (a, b, _)    ->
+        Fmt.pf ppf "@[{ %s = %a; %s = %a }@]"
+          a.fname (field a) x b.fname (field b) x
+    | F3 (a, b, c, _) ->
+        Fmt.pf ppf "@[{ %s = %a; %s = %a; %s = %a }@]"
+          a.fname (field a) x b.fname (field b) x c.fname (field c) x
+    | F4 (a, b, c, d, _) ->
+        Fmt.pf ppf "@[{ %s = %a; %s = %a; %s = %a; %s = %a }@]"
+          a.fname (field a) x b.fname (field b) x c.fname (field c) x
+          d.fname (field d) x
+    | F5 (a, b, c, d, e, _) ->
+        Fmt.pf ppf "@[{ %s = %a; %s = %a; %s = %a; %s = %a; %s = %a }@]"
+          a.fname (field a) x b.fname (field b) x c.fname (field c) x
+          d.fname (field d) x e.fname (field e) x
+    | F6 (a, b, c, d, e, f, _) ->
+        Fmt.pf ppf "@[{ %s = %a; %s = %a; %s = %a; %s = %a; %s = %a; %s = %a }@]"
+          a.fname (field a) x b.fname (field b) x c.fname (field c) x
+          d.fname (field d) x e.fname (field e) x f.fname (field f) x
 
   and field: type a b. (a, b) field -> a Fmt.t = fun f ppf x ->
     t f.ftype ppf (f.fget x)
@@ -324,9 +381,14 @@ module Size_of = struct
 
   and record: type a. a record -> a size_of = fun r x ->
     match r.rfields with
-    | F1 (f, _)       -> field f x
-    | F2 (f, g, _)    -> field f x + field g x
-    | F3 (f, g, h, c) -> field f x + field g x + field h x
+    | F1 (a, _)                -> field a x
+    | F2 (a, b, _)             -> field a x + field b x
+    | F3 (a, b, c, _)          -> field a x + field b x + field c x
+    | F4 (a, b, c, d, _)       -> field a x + field b x + field c x + field d x
+    | F5 (a, b, c, d, e, _)    -> field a x + field b x + field c x + field d x
+                                  + field e x
+    | F6 (a, b, c, d, e, f, _) -> field a x + field b x + field c x + field d x
+                                  + field e x + field f x
 
   and field: type a b. (a, b) field -> a size_of = fun f x ->
     t f.ftype (f.fget x)
@@ -390,9 +452,15 @@ module Write = struct
 
   and record: type a. a record -> a write = fun r x buf ->
     match r.rfields with
-    | F1 (f, _)       -> buf |> field f x
-    | F2 (f, g, _)    -> buf |> field f x |> field g x
-    | F3 (f, g, h, c) -> buf |> field f x |> field g x |> field h x
+    | F1 (a, _)                -> buf |> field a x
+    | F2 (a, b, _)             -> buf |> field a x |> field b x
+    | F3 (a, b, c, _)          -> buf |> field a x |> field b x |> field c x
+    | F4 (a, b, c, d, _)       -> buf |> field a x |> field b x |> field c x |>
+                                  field d x
+    | F5 (a, b, c, d, e, _)    -> buf |> field a x |> field b x  |> field c x |>
+                                  field d x |> field e x
+    | F6 (a, b, c, d, e, f, _) -> buf |> field a x |> field b x |> field c x |>
+                                  field d x |> field e x |> field f x
 
   and field: type a b. (a, b) field -> a write = fun f x buf ->
     t f.ftype (f.fget x) buf
@@ -455,13 +523,39 @@ module Read = struct
 
   and record: type a. a record -> a read = fun r buf ->
     match r.rfields with
-    | F1 (f, c)       -> field f buf >|= fun f -> c f
-    | F2 (f, g, c)    -> field f buf >>= fun f -> field g buf >|= fun g -> c f g
-    | F3 (f, g, h, c) ->
-      field f buf >>= fun f ->
-      field g buf >>= fun g ->
-      field h buf >|= fun h ->
-      c f g h
+    | F1 (a, f) ->
+        field a buf >|= fun a ->
+        f a
+    | F2 (a, b, f) ->
+        field a buf >>= fun a ->
+        field b buf >|= fun b ->
+        f a b
+    | F3 (a, b, c, f) ->
+      field a buf >>= fun a ->
+      field b buf >>= fun b ->
+      field c buf >|= fun c ->
+      f a b c
+    | F4 (a, b, c, d, f) ->
+      field a buf >>= fun a ->
+      field b buf >>= fun b ->
+      field c buf >>= fun c ->
+      field d buf >|= fun d ->
+      f a b c d
+    | F5 (a, b, c, d, e, f) ->
+      field a buf >>= fun a ->
+      field b buf >>= fun b ->
+      field c buf >>= fun c ->
+      field d buf >>= fun d ->
+      field e buf >|= fun e ->
+      f a b c d e
+    | F6 (a, b, c, d, e, x, f) ->
+      field a buf >>= fun a ->
+      field b buf >>= fun b ->
+      field c buf >>= fun c ->
+      field d buf >>= fun d ->
+      field e buf >>= fun e ->
+      field x buf >|= fun x ->
+      f a b c d e x
 
   and field: type a  b. (a, b) field -> b read = fun f buf -> t f.ftype buf
 
