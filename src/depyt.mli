@@ -199,7 +199,7 @@ val write: 'a t -> 'a -> Cstruct.t -> Cstruct.t
 (** [write t] serializes values of type [t]. Use [size_of] to
     pre-determine the size of the buffer. *)
 
-val read: 'a t -> Mstruct.t -> ('a, string) result
+val read: 'a t -> Mstruct.t -> ('a, string) Result.result
 (** [read t] reads a serialization of a value of type [t]. *)
 
 val test: 'a t -> 'a Alcotest.testable

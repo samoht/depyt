@@ -4,6 +4,8 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
+open Result
+
 type (_, _) eq = Refl: ('a, 'a) eq
 
 module Witness : sig
