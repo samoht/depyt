@@ -112,10 +112,10 @@ and 'a case0 = {
   ctag0 : int ref;
   cname0: string;
   c0    : 'a;
-  cargs : dyn list;
+  cargs : arg list;
 }
 
-and dyn = Dyn: 'a t * 'a -> dyn
+and arg = Arg: 'a t * 'a -> arg
 
 and ('a, 'b) case1 = {
   ctag1 : int ref;
@@ -164,8 +164,6 @@ let record6 rname a b c d e f g =
 
 (* variants *)
 
-let dyn t x = Dyn (t, x)
-
 let case0 cname0 c0 =
   let ctag0 = ref (-1) in
   let x = { ctag0; cname0; c0; cargs = [] } in
@@ -173,7 +171,7 @@ let case0 cname0 c0 =
 
 let app1:('a, 'b) case1 -> 'b t -> 'b -> 'a case0 = fun c bt b ->
   let c0 = c.c1 b in
-  { ctag0 = c.ctag1; cname0 = c.cname1; c0; cargs = [ Dyn (bt, b) ] }
+  { ctag0 = c.ctag1; cname0 = c.cname1; c0; cargs = [ Arg (bt, b) ] }
 
 let case1 cname1 ctype1 c1 =
   let ctag1 = ref (-1) in
@@ -283,9 +281,9 @@ module Equal = struct
     case0 (v.vget x) (v.vget y)
 
   and case0: type a. a case0 equal = fun x y ->
-    int x.ctag0.contents y.ctag0.contents && list dyn x.cargs y.cargs
+    int x.ctag0.contents y.ctag0.contents && list arg x.cargs y.cargs
 
-  and dyn: dyn equal = fun (Dyn (tx, x)) (Dyn (ty, y)) ->
+  and arg: arg equal = fun (Arg (tx, x)) (Arg (ty, y)) ->
     match Refl.eq tx ty with
     | Some Refl -> t tx x y
     | None      -> assert false (* this should never happen *)
@@ -356,10 +354,10 @@ module Compare = struct
 
   and case0: type a. a case0 compare = fun x y ->
     match int x.ctag0.contents y.ctag0.contents with
-    | 0 -> list dyn x.cargs y.cargs
+    | 0 -> list arg x.cargs y.cargs
     | i -> i
 
-  and dyn: dyn compare = fun (Dyn (tx, x)) (Dyn (ty, y)) ->
+  and arg: arg compare = fun (Arg (tx, x)) (Arg (ty, y)) ->
     match Refl.eq tx ty with
     | Some Refl -> t tx x y
     | None      -> assert false (* this should never happen *)
@@ -423,9 +421,9 @@ module Pp = struct
     match c.cargs with
     | [] -> Fmt.string ppf c.cname0
     | l  ->
-      Fmt.pf ppf "@[<2>%s %a@]" c.cname0 Fmt.(list ~sep:(unit ",@ ") dyn) l
+      Fmt.pf ppf "@[<2>%s %a@]" c.cname0 Fmt.(list ~sep:(unit ",@ ") arg) l
 
-  and dyn ppf (Dyn (tx, x)) = t tx ppf x
+  and arg ppf (Arg (tx, x)) = t tx ppf x
 
 end
 
@@ -473,10 +471,9 @@ module Size_of = struct
     t f.ftype (f.fget x)
 
   and variant: type a. a variant -> a size_of = fun v x ->
-    case0 (v.vget x) x
-
-  and case0: type a. a case0 -> a size_of = fun c x ->
-    List.fold_left (fun acc (Dyn (ta, a)) -> acc + t ta a) (int8 0) c.cargs
+    List.fold_left
+      (fun acc (Arg (ta, a)) -> acc + t ta a) (int8 0)
+      (v.vget x).cargs
 
 end
 
@@ -550,7 +547,7 @@ module Write = struct
   and case0: type a. a case0 write = fun c buf ->
     buf
     |> int8 c.ctag0.contents (* FIXME: we support 'only' 256 cases *)
-    |> List.fold_right (fun (Dyn (ta, a)) -> t ta a) c.cargs
+    |> List.fold_right (fun (Arg (ta, a)) -> t ta a) c.cargs
 
 end
 
@@ -563,12 +560,12 @@ module Read = struct
   let (>>=) x f = match x with Ok x -> f x | Error _ as e -> e
   let (>|=) x f = match x with Ok x -> Ok (f x) | Error _ as e -> e
 
-  let unit t = Ok ()
+  let unit _ = Ok ()
   let int8 t = Ok (Mstruct.get_uint8 t)
   let int t = Ok (Int64.to_int @@ Mstruct.get_be_uint64 t)
   let string t = int t >|= Mstruct.get_string t
 
-  let list xx l t =
+  let list l t =
     int t >>= fun len ->
     let rec aux acc = function
       | 0 -> Ok (List.rev acc)
@@ -589,7 +586,7 @@ module Read = struct
 
   let rec t: type a. a t -> a read = function
     | Prim t     -> prim t
-    | List l     -> list l (t l)
+    | List l     -> list (t l)
     | Pair (x,y) -> pair (t x) (t y)
     | Option x   -> option (t x)
     | Record r   -> record r
