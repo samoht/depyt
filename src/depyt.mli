@@ -64,7 +64,18 @@ val record2:
   ('a, 'b) field ->
   ('a, 'c) field ->
   ('b -> 'c -> 'a) -> 'a t
-(** Same as {!record1} but for records with 2 fields. *)
+(** Same as {!record1} but for records with 2 fields. e.g.
+
+    {[
+      type t = { foo: string; bar = int list }
+
+      let t =
+        record2 "t"
+          (field "foo" string (fun t -> t.foo))
+          (field "bar" (list int) (fun t -> t.bar))
+        @@ fun foo bar -> { foo; bar }
+    ]}
+*)
 
 val record3:
   string ->
