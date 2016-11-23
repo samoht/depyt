@@ -1,0 +1,6 @@
+true : bin_annot, safe_string, package(bytes)
+
+true: package(cstruct mstruct fmt result alcotest)
+
+<src> : include
+<test> : include
