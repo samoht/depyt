@@ -44,8 +44,9 @@ val field: string -> 'a t -> ('b -> 'a) -> ('b, 'a) field
     with getter [g]. *)
 
 val record1: string -> ('a, 'b) field -> ('b -> 'a) -> 'a t
-(** [record1 n f mk] is the representation of the record [n], having only
-    one field and with constructor [c].
+(** [record1 n f mk] is the representation of the record called [n] of
+    type ['a], having only one field of type ['b] and with constructor
+    [c].
 
     For instance:
 
@@ -53,9 +54,8 @@ val record1: string -> ('a, 'b) field -> ('b -> 'a) -> 'a t
       type t = { foo: string }
 
       let t =
-        record1 "t"
-          (field "foo" string (fun t -> t.foo))
-          (fun foo -> { foo })
+        record1 "t" (field "foo" string (fun t -> t.foo))
+          @@ fun foo -> { foo }
     ]}
 *)
 
@@ -146,7 +146,8 @@ val variant: string -> 'a case list -> ('a -> 'a case0) -> 'a t
       let t =
         let foo, mkfoo = case0 "Foo" Foo in
         let bar, mkbar = case1 "Bar" string (fun x -> Bar x) in
-        variant "v" [foo; bar] (function Foo -> mkfoo | Bar x -> mkbar x)
+        variant "t" [foo; bar]
+        @@ function Foo -> mkfoo | Bar x -> mkbar x
     ]}
 
   *)
@@ -161,10 +162,11 @@ val enum: string -> (string * 'a) list -> 'a t
     ]}
 *)
 
-(** {1 Actions}
+(** {1 Operations}
 
-    Having a value representing a type could be useful in all sorts of
-    place. We provide here few examples.
+    Given a value ['a t], it is possible to define high-level
+    operations on value of type ['a] such as pretty-printing, parsing
+    and unparsing. We provide here few examples.
 *)
 
 val pp: 'a t -> 'a Fmt.t

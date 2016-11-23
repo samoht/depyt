@@ -15,7 +15,7 @@ For instance, to define variants:
 # let t =
     let foo, mkfoo = case0 "Foo" Foo in
     let bar, mkbar = case1 "Bar" (option string) (fun x -> Bar x) in
-    variant "v" [foo; bar] (function Foo -> mkfoo | Bar x -> mkbar x);;
+    variant "v" [foo; bar] @@ function Foo -> mkfoo | Bar x -> mkbar x;;
 val t : t Depyt.t = <abstr>
 
 # Fmt.pr "t = %a\n" (pp t) Foo;;
