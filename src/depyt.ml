@@ -153,6 +153,15 @@ let variant vname vcases vget =
   let vcases = Array.of_list vcases in
   Variant { vname; vcases; vget }
 
+let enum name l =
+  let constr, mk =
+    List.fold_left (fun (constr, mk) (n, v) ->
+        let c, c0 = case0 n v in
+        c :: constr, (v, c0) :: mk
+      ) ([], []) (List.rev l)
+  in
+  variant name constr (fun x -> List.assq x mk)
+
 let fields = function
 | F1 (a, _)                -> [Field a]
 | F2 (a, b, _)             -> [Field a; Field b]

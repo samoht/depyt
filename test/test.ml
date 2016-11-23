@@ -39,11 +39,19 @@ let v =
   let bar, mkbar = case1 "Bar" int (fun x -> Bar x) in
   variant "v" [foo; bar] (function Foo -> mkfoo | Bar x -> mkbar x)
 
+type my_e = Fooe | Bars | Toto | Tata
+let e = enum "e" ["Fooe", Fooe; "Bars", Bars; "Toto", Toto; "Tata", Tata]
+
 let r1 = { foo = 3; bar = ["aaa";"b"] }
 let r2 = { foo = 3; bar = ["aaa";"c"] }
 let v1 = Foo
 let v2 = Bar 0
 let v3 = Bar 1
+
+let e1 = Fooe
+let e2 = Bars
+let e3 = Toto
+let e4 = Tata
 
 (* FIXME: should go upstream *)
 let neg t =
@@ -59,13 +67,20 @@ let test_equal () =
   Alcotest.(check @@ neg @@ test r) __LOC__ r2 r1;
   Alcotest.(check @@ neg @@ test v) __LOC__ v1 v2;
   Alcotest.(check @@ neg @@ test v) __LOC__ v2 v3;
-  Alcotest.(check @@ neg @@ test v) __LOC__ v3 v1
+  Alcotest.(check @@ neg @@ test v) __LOC__ v3 v1;
+  Alcotest.(check @@ test e) __LOC__ e1 e1;
+  Alcotest.(check @@ neg @@ test e) __LOC__ e1 e2;
+  Alcotest.(check @@ neg @@ test e) __LOC__ e1 e3
 
 let test_compare () =
   Alcotest.(check int) __LOC__ (compare r r1 r2) ~-1;
   Alcotest.(check int) __LOC__ (compare v v1 v2) ~-1;
   Alcotest.(check int) __LOC__ (compare v v2 v3)  ~-1;
-  Alcotest.(check int) __LOC__ (compare v v3 v1)  1
+  Alcotest.(check int) __LOC__ (compare v v3 v1)  1;
+  Alcotest.(check int) __LOC__ (compare e e1 e2) ~-1;
+  Alcotest.(check int) __LOC__ (compare e e2 e3) ~-1;
+  Alcotest.(check int) __LOC__ (compare e e3 e4) ~-1;
+  Alcotest.(check int) __LOC__ (compare e e4 e1) 1
 
 let test_write () =
   let check t x =
@@ -78,7 +93,10 @@ let test_write () =
   check r r2;
   check v v1;
   check v v2;
-  check v v3
+  check v v3;
+  check e e1;
+  check e e2;
+  check e e3
 
 let test_read () =
   let check t x =
@@ -94,7 +112,10 @@ let test_read () =
   check r r2;
   check v v1;
   check v v2;
-  check v v3
+  check v v3;
+  check e e1;
+  check e e2;
+  check e e3
 
 let () =
   Printexc.record_backtrace true;

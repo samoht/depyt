@@ -151,6 +151,16 @@ val variant: string -> 'a case list -> ('a -> 'a case0) -> 'a t
 
   *)
 
+val enum: string -> (string * 'a) list -> 'a t
+(** [enum n l] is a representation of the variant type which has
+    only constant variant case. e.g.
+
+    {[
+      type t = Foo | Bar | Toto
+      let t = enum "t" ["Foo", Foo; "Bar", Bar; "Toto", Toto]
+    ]}
+*)
+
 (** {1 Actions}
 
     Having a value representing a type could be useful in all sorts of
