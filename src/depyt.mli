@@ -144,6 +144,7 @@ val case1: string -> 'b t -> ('b -> 'a) -> 'a case * ('b -> 'a case0)
 
     {[
       type t = Foo of string
+
       let foo = case1 "Foo" string (fun s -> Foo s)
     ]}
 *)
@@ -154,6 +155,7 @@ val variant: string -> 'a case list -> ('a -> 'a case0) -> 'a t
 
     {[
       type t = Foo | Bar of string
+
       let t =
         let foo, mkfoo = case0 "Foo" Foo in
         let bar, mkbar = case1 "Bar" string (fun x -> Bar x) in
@@ -169,6 +171,7 @@ val enum: string -> (string * 'a) list -> 'a t
 
     {[
       type t = Foo | Bar | Toto
+
       let t = enum "t" ["Foo", Foo; "Bar", Bar; "Toto", Toto]
     ]}
 *)
