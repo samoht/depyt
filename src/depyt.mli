@@ -55,7 +55,7 @@ val record1: string -> ('a, 'b) field -> ('b -> 'a) -> 'a t
 
       let t =
         record1 "t" (field "foo" string (fun t -> t.foo))
-          @@ fun foo -> { foo }
+        @@ fun foo -> { foo }
     ]}
 *)
 
