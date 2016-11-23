@@ -24,7 +24,7 @@
 Yet-an-other type combinator library
 <p>
 
-    <em>7a7e25c — <a href="https://github.com/samoht/depyt ">homepage</a></em><br>
+    <em>84f661e — <a href="https://github.com/samoht/depyt ">homepage</a></em><br>
 </div>
 <hr width="100%">
 <br>
@@ -161,6 +161,7 @@ The type for representing a variant of type <code class="code"><span class="keyw
 <p>
 
     <pre class="codepre"><code class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;t&nbsp;=&nbsp;<span class="constructor">Foo</span>&nbsp;<span class="keyword">of</span>&nbsp;string
+
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;foo&nbsp;=&nbsp;case1&nbsp;<span class="string">"Foo"</span>&nbsp;string&nbsp;(<span class="keyword">fun</span>&nbsp;s&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Foo</span>&nbsp;s)
 &nbsp;&nbsp;&nbsp;&nbsp;</code></pre><br>
 </div>
@@ -171,6 +172,7 @@ The type for representing a variant of type <code class="code"><span class="keyw
 <p>
 
     <pre class="codepre"><code class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;t&nbsp;=&nbsp;<span class="constructor">Foo</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Bar</span>&nbsp;<span class="keyword">of</span>&nbsp;string
+
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;t&nbsp;=
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;foo,&nbsp;mkfoo&nbsp;=&nbsp;case0&nbsp;<span class="string">"Foo"</span>&nbsp;<span class="constructor">Foo</span>&nbsp;<span class="keyword">in</span>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;bar,&nbsp;mkbar&nbsp;=&nbsp;case1&nbsp;<span class="string">"Bar"</span>&nbsp;string&nbsp;(<span class="keyword">fun</span>&nbsp;x&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Bar</span>&nbsp;x)&nbsp;<span class="keyword">in</span>
@@ -185,6 +187,7 @@ The type for representing a variant of type <code class="code"><span class="keyw
 <p>
 
     <pre class="codepre"><code class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;t&nbsp;=&nbsp;<span class="constructor">Foo</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Bar</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Toto</span>
+
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;t&nbsp;=&nbsp;enum&nbsp;<span class="string">"t"</span>&nbsp;[<span class="string">"Foo"</span>,&nbsp;<span class="constructor">Foo</span>;&nbsp;<span class="string">"Bar"</span>,&nbsp;<span class="constructor">Bar</span>;&nbsp;<span class="string">"Toto"</span>,&nbsp;<span class="constructor">Toto</span>]
 &nbsp;&nbsp;&nbsp;&nbsp;</code></pre><br>
 </div>
