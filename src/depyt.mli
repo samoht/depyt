@@ -13,13 +13,6 @@
 type 'a t
 (** The type for runtime representation of values of type ['a]. *)
 
-type dyn = Dyn: 'a t * 'a -> dyn
-(** The type for dynamic values. *)
-
-val dyn: 'a t -> 'a -> dyn
-(** [dyn t v] is a dynamic value: a pair of a runtime representation
-    of a type and a value of this type. *)
-
 (** {1 Primitives} *)
 
 val unit: unit t

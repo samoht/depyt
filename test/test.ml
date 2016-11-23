@@ -68,22 +68,20 @@ let test_compare () =
   Alcotest.(check int) __LOC__ (compare v v3 v1)  1
 
 let test_write () =
-  let check (Dyn (t, x)) =
+  let check t x =
     let len = size_of t x in
     let buf0 = Cstruct.create len in
     let buf = write t x buf0 in
     Alcotest.(check int) (Fmt.to_to_string (pp t) x) (Cstruct.len buf) 0
   in
-  List.iter check [
-    dyn r r1;
-    dyn r r2;
-    dyn v v1;
-    dyn v v2;
-    dyn v v3;
-  ]
+  check r r1;
+  check r r2;
+  check v v1;
+  check v v2;
+  check v v3
 
 let test_read () =
-  let check (Dyn (t, x)) =
+  let check t x =
     let len = size_of t x in
     let buf0 = Cstruct.create len in
     let buf = write t x buf0 in
@@ -92,13 +90,11 @@ let test_read () =
     | Ok y    -> Alcotest.(check @@ test t) __LOC__ x y
     | Error _ -> Alcotest.fail __LOC__
   in
-  List.iter check [
-    dyn r r1;
-    dyn r r2;
-    dyn v v1;
-    dyn v v2;
-    dyn v v3;
-  ]
+  check r r1;
+  check r r2;
+  check v v1;
+  check v v2;
+  check v v3
 
 let () =
   Printexc.record_backtrace true;
