@@ -1,4 +1,4 @@
-PKG bytes mstruct cstruct fmt result alcotest
+PKG bytes cstruct fmt result alcotest
 S src
 S test
 B _build/**

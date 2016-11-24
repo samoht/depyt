@@ -21,7 +21,6 @@
   ---------------------------------------------------------------------------*)
 
 open Depyt
-open Result
 
 type my_r = { foo: int; bar: string list }
 
@@ -85,9 +84,10 @@ let test_compare () =
 let test_write () =
   let check t x =
     let len = size_of t x in
-    let buf0 = Cstruct.create len in
-    let buf = write t x buf0 in
-    Alcotest.(check int) (Fmt.to_to_string (pp t) x) (Cstruct.len buf) 0
+    let buf = Cstruct.create len in
+    let len'= write t buf ~pos:0 x in
+    let msg = Fmt.strf "%a\n%s" (pp t) x in
+    Alcotest.(check int) (msg __LOC__) len len'
   in
   check r r1;
   check r r2;
@@ -101,12 +101,12 @@ let test_write () =
 let test_read () =
   let check t x =
     let len = size_of t x in
-    let buf0 = Cstruct.create len in
-    let buf = write t x buf0 in
-    Alcotest.(check int) __LOC__ (Cstruct.len buf) 0;
-    match read t (Mstruct.of_cstruct buf0) with
-    | Ok y    -> Alcotest.(check @@ test t) __LOC__ x y
-    | Error _ -> Alcotest.fail __LOC__
+    let buf = Cstruct.create len in
+    let len' = write t buf ~pos:0 x in
+    Alcotest.(check int) __LOC__ len len';
+    let len', y = read t buf ~pos:0 in
+    Alcotest.(check int) __LOC__ len len';
+    Alcotest.(check @@ test t) __LOC__ x y
   in
   check r r1;
   check r r2;
@@ -118,7 +118,6 @@ let test_read () =
   check e e3
 
 let () =
-  Printexc.record_backtrace true;
   Alcotest.run "depyt" [
     "basic", [
       "equal"  , `Quick, test_equal;

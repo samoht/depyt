@@ -4,8 +4,6 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
-open Result
-
 type (_, _) eq = Refl: ('a, 'a) eq
 
 module Witness : sig
@@ -490,41 +488,43 @@ end
 
 let size_of = Size_of.t
 
-type 'a write = 'a -> Cstruct.t -> Cstruct.t
+type buffer = Cstruct.t
+
+type 'a write = buffer -> pos:int -> 'a -> int
 
 module Write = struct
 
-  let unit () buf = buf
+  module Cstruct = struct
 
-  let int8 i buf =
-    Cstruct.set_uint8 buf 0 i;
-    Cstruct.shift buf 1
+    let unit _ ~pos () = pos
+    let int8 buf ~pos i = Cstruct.set_uint8 buf pos i; pos+1
+    let int buf ~pos i = Cstruct.BE.set_uint64 buf pos (Int64.of_int i); pos+8
 
-  let int i buf =
-    Cstruct.BE.set_uint64 buf 0 (Int64.of_int i);
-    Cstruct.shift buf 8
+    let string buf ~pos str =
+      let len = String.length str in
+      let pos = int buf ~pos len in
+      Cstruct.blit_from_string str 0 buf pos len;
+      pos+len
 
-  let string str buf =
-    let len = String.length str in
-    let buf = int len buf in
-    Cstruct.blit_from_string str 0 buf 0 len;
-    Cstruct.shift buf len
+    let list l buf ~pos x =
+      let pos = int buf ~pos (List.length x) in
+      List.fold_left (fun pos i -> l buf ~pos i) pos x
 
-  let list l x buf =
-    let buf = int (List.length x) buf in
-    List.fold_left (fun buf i -> l i buf) buf x
+    let (>>=) = (|>)
 
-  let pair a b (x, y) buf = buf |> a x |> b y
+    let pair a b buf ~pos (x, y) =
+      a buf ~pos x >>= fun pos ->
+      b buf ~pos y
 
-  let bool = function
-    | false -> int8 0
-    | true  -> int8 1
+    let bool buf ~pos = function
+    | false -> int8 buf ~pos 0
+    | true  -> int8 buf ~pos 1
 
-  let option o x buf = match x with
-    | None   -> buf |> bool false
-    | Some x -> buf |> bool true |> o x
+    let option o buf ~pos = function
+    | None   -> bool buf ~pos false
+    | Some x -> bool buf ~pos true >>= fun pos -> o buf ~pos x
 
-  let rec t: type a. a t -> a write = function
+    let rec t: type a. a t -> a write = function
     | Prim t     -> prim t
     | List l     -> list (t l)
     | Pair (x,y) -> pair (t x) (t y)
@@ -532,70 +532,100 @@ module Write = struct
     | Record r   -> record r
     | Variant v  -> variant v
 
-  and prim: type a. a prim -> a write = function
+    and prim: type a. a prim -> a write = function
     | Unit   -> unit
     | Int    -> int
     | String -> string
 
-  and record: type a. a record -> a write = fun r x buf ->
-    match r.rfields with
-    | F1 (a, _)                -> buf |> field a x
-    | F2 (a, b, _)             -> buf |> field a x |> field b x
-    | F3 (a, b, c, _)          -> buf |> field a x |> field b x |> field c x
-    | F4 (a, b, c, d, _)       -> buf |> field a x |> field b x |> field c x |>
-                                  field d x
-    | F5 (a, b, c, d, e, _)    -> buf |> field a x |> field b x  |> field c x |>
-                                  field d x |> field e x
-    | F6 (a, b, c, d, e, f, _) -> buf |> field a x |> field b x |> field c x |>
-                                  field d x |> field e x |> field f x
+    and record: type a. a record -> a write = fun r buf ~pos x->
+      match r.rfields with
+      | F1 (a, _)          ->
+          field a buf ~pos x
+      | F2 (a, b, _)       ->
+          field a buf ~pos x >>= fun pos ->
+          field b buf ~pos x
+      | F3 (a, b, c, _)    ->
+          field a buf ~pos x >>= fun pos ->
+          field b buf ~pos x >>= fun pos ->
+          field c buf ~pos x
+      | F4 (a, b, c, d, _) ->
+          field a buf ~pos x >>= fun pos ->
+          field b buf ~pos x >>= fun pos ->
+          field c buf ~pos x >>= fun pos ->
+          field d buf ~pos x
+      | F5 (a, b, c, d, e, _) ->
+          field a buf ~pos x >>= fun pos ->
+          field b buf ~pos x >>= fun pos ->
+          field c buf ~pos x >>= fun pos ->
+          field d buf ~pos x >>= fun pos ->
+          field e buf ~pos x
+      | F6 (a, b, c, d, e, f, _) ->
+          field a buf ~pos x >>= fun pos ->
+          field b buf ~pos x >>= fun pos ->
+          field c buf ~pos x >>= fun pos ->
+          field d buf ~pos x >>= fun pos ->
+          field e buf ~pos x >>= fun pos ->
+          field f buf ~pos x
 
-  and field: type a b. (a, b) field -> a write = fun f x buf ->
-    t f.ftype (f.fget x) buf
+    and field: type a b. (a, b) field -> a write = fun f buf ~pos x ->
+      t f.ftype buf ~pos (f.fget x)
 
-  and variant: type a. a variant -> a write = fun v x ->
-    case_v (v.vget x)
+    and variant: type a. a variant -> a write = fun v buf ~pos x ->
+      case_v buf ~pos (v.vget x)
 
-  and case_v: type a. a case_v write = fun c buf ->
-    match c with
-    | CV0 c      -> buf |> int8 c.ctag0.contents
-    | CV1 (c, v) -> buf |> int8 c.ctag1.contents |> t c.ctype1 v
+    and case_v: type a. a case_v write = fun buf ~pos c ->
+      match c with
+      | CV0 c     -> int8 buf ~pos c.ctag0.contents
+      | CV1 (c,v) ->
+          int8 buf ~pos c.ctag1.contents >>= fun pos ->
+          t c.ctype1 buf ~pos v
+
+  end
 
 end
 
-let write = Write.t
+let write = Write.Cstruct.t
 
-type 'a read = Mstruct.t -> ('a, string) result
+type 'a read = buffer -> pos:int -> int * 'a
 
 module Read = struct
 
-  let (>>=) x f = match x with Ok x -> f x | Error _ as e -> e
-  let (>|=) x f = match x with Ok x -> Ok (f x) | Error _ as e -> e
+  module Cstruct = struct
 
-  let unit _ = Ok ()
-  let int8 t = Ok (Mstruct.get_uint8 t)
-  let int t = Ok (Int64.to_int @@ Mstruct.get_be_uint64 t)
-  let string t = int t >|= Mstruct.get_string t
+    let (>|=) (pos, x) f = (pos, f x)
+    let (>>=) = (|>)
 
-  let list l t =
-    int t >>= fun len ->
-    let rec aux acc = function
-      | 0 -> Ok (List.rev acc)
+    let unit _ ~pos = pos, ()
+    let int8 buf ~pos = pos+1, Cstruct.get_uint8 buf pos
+    let int buf ~pos = pos+8, (Int64.to_int @@ Cstruct.BE.get_uint64 buf pos)
+
+    let string buf ~pos =
+      let pos, len = int buf ~pos in
+      let str = Bytes.create len in
+      Cstruct.blit_to_string buf pos str 0 len;
+      pos+len, Bytes.unsafe_to_string str
+
+    let list l buf ~pos =
+      let pos, len = int buf ~pos in
+      let rec aux acc ~pos = function
+      | 0 -> pos, List.rev acc
       | n ->
-        match l t with
-        | Ok x         ->
-          aux (x :: acc) (n - 1)
-        | Error _ as e -> e
-    in
-    aux [] len
+          let pos, x = l buf ~pos in
+          aux (x :: acc) ~pos (n - 1)
+      in
+      aux [] ~pos len
 
-  let pair a b t = a t >>= fun a -> b t >|= fun b -> a, b
+    let pair a b buf ~pos =
+      a buf ~pos >>= fun (pos, a) ->
+      b buf ~pos >>= fun (pos, b) ->
+      pos, (a, b)
 
-  let option o t =
-    int8 t >>= function
-    | 0 -> Ok None
-    | _ -> o t >|= fun x -> Some x
+    let option o buf ~pos =
+      int8 buf ~pos >>= function
+      | pos, 0 -> pos, None
+      | pos, _ -> o buf ~pos >|= fun x -> Some x
 
-  let rec t: type a. a t -> a read = function
+    let rec t: type a. a t -> a read = function
     | Prim t     -> prim t
     | List l     -> list (t l)
     | Pair (x,y) -> pair (t x) (t y)
@@ -603,61 +633,63 @@ module Read = struct
     | Record r   -> record r
     | Variant v  -> variant v
 
-  and prim: type a. a prim -> a read = function
+    and prim: type a. a prim -> a read = function
     | Unit   -> unit
     | Int    -> int
     | String -> string
 
-  and record: type a. a record -> a read = fun r buf ->
-    match r.rfields with
-    | F1 (a, f) ->
-        field a buf >|= fun a ->
-        f a
-    | F2 (a, b, f) ->
-        field a buf >>= fun a ->
-        field b buf >|= fun b ->
-        f a b
-    | F3 (a, b, c, f) ->
-      field a buf >>= fun a ->
-      field b buf >>= fun b ->
-      field c buf >|= fun c ->
-      f a b c
-    | F4 (a, b, c, d, f) ->
-      field a buf >>= fun a ->
-      field b buf >>= fun b ->
-      field c buf >>= fun c ->
-      field d buf >|= fun d ->
-      f a b c d
-    | F5 (a, b, c, d, e, f) ->
-      field a buf >>= fun a ->
-      field b buf >>= fun b ->
-      field c buf >>= fun c ->
-      field d buf >>= fun d ->
-      field e buf >|= fun e ->
-      f a b c d e
-    | F6 (a, b, c, d, e, x, f) ->
-      field a buf >>= fun a ->
-      field b buf >>= fun b ->
-      field c buf >>= fun c ->
-      field d buf >>= fun d ->
-      field e buf >>= fun e ->
-      field x buf >|= fun x ->
-      f a b c d e x
+    and record: type a. a record -> a read = fun r buf ~pos ->
+      match r.rfields with
+      | F1 (a, f) ->
+          field a buf ~pos >|= fun a ->
+          f a
+      | F2 (a, b, f) ->
+          field a buf ~pos >>= fun (pos, a) ->
+          field b buf ~pos >|= fun b ->
+          f a b
+      | F3 (a, b, c, f) ->
+          field a buf ~pos >>= fun (pos, a) ->
+          field b buf ~pos >>= fun (pos, b) ->
+          field c buf ~pos >|= fun c ->
+          f a b c
+      | F4 (a, b, c, d, f) ->
+          field a buf ~pos >>= fun (pos, a) ->
+          field b buf ~pos >>= fun (pos, b) ->
+          field c buf ~pos >>= fun (pos, c) ->
+          field d buf ~pos >|= fun d ->
+          f a b c d
+      | F5 (a, b, c, d, e, f) ->
+          field a buf ~pos >>= fun (pos, a) ->
+          field b buf ~pos >>= fun (pos, b) ->
+          field c buf ~pos >>= fun (pos, c) ->
+          field d buf ~pos >>= fun (pos, d) ->
+          field e buf ~pos >|= fun e ->
+          f a b c d e
+      | F6 (a, b, c, d, e, x, f) ->
+          field a buf ~pos >>= fun (pos, a) ->
+          field b buf ~pos >>= fun (pos, b) ->
+          field c buf ~pos >>= fun (pos, c) ->
+          field d buf ~pos >>= fun (pos, d) ->
+          field e buf ~pos >>= fun (pos, e) ->
+          field x buf ~pos >|= fun x ->
+          f a b c d e x
 
-  and field: type a  b. (a, b) field -> b read = fun f buf -> t f.ftype buf
+    and field: type a  b. (a, b) field -> b read = fun f -> t f.ftype
 
-  and variant: type a. a variant -> a read = fun v buf ->
-    int8 buf >>= fun i -> (* FIXME: we support 'only' 256 variants *)
-    case v.vcases.(i) buf
+    and variant: type a. a variant -> a read = fun v buf ~pos ->
+      (* FIXME: we support 'only' 256 variants *)
+      int8 buf ~pos >>= fun (pos, i) ->
+      case v.vcases.(i) buf ~pos
 
-  and case: type a. a case' -> a read = fun c buf ->
-    match c with
-    | C0 c -> Ok c.c0
-    | C1 c -> t c.ctype1 buf >|= c.c1
+    and case: type a. a case' -> a read = fun c buf ~pos ->
+      match c with
+      | C0 c -> pos, c.c0
+      | C1 c -> t c.ctype1 buf ~pos >|= c.c1
 
+  end
 end
 
-let read = Read.t
+let read = Read.Cstruct.t
 
 let test t = Alcotest.testable (pp t) (equal t)
 
