@@ -200,7 +200,6 @@ let enum vname l =
   let vwit = Witness.make () in
   let _, vcases, mk =
     List.fold_left (fun (i, cases, mk) (n, v) ->
-        Printf.eprintf "XXX %d %s\n%!" i n;
         let c = { ctag0 = ref i; cname0 = n; c0 = v } in
         i+1, (C0 c :: cases), (v, CV0 c) :: mk
       ) (0, [], []) l
