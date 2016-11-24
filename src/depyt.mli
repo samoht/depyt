@@ -192,8 +192,8 @@ val compare: 'a t -> 'a -> 'a -> int
 type buffer = Cstruct.t
 (** The type for buffers. *)
 
-(** Parsing and unparsing. *)
-module type Parser = sig
+(** Serialization. *)
+module type Serializer = sig
 
   val size_of: 'a t -> 'a -> int
   (** [size_of t] is the size needed to serialize values of type [t]. *)

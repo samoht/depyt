@@ -697,7 +697,7 @@ module Parse_json = struct
 
 end
 
-module type Parser = sig
+module type Serializer = sig
   val size_of: 'a t -> 'a -> int
   val write: 'a t -> buffer -> pos:int -> 'a -> int
   val read: 'a t ->  buffer -> pos:int -> int * [`Ok of 'a | `Error of string]
