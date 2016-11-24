@@ -24,7 +24,7 @@
 Yet-an-other type combinator library
 <p>
 
-    <em>84f661e — <a href="https://github.com/samoht/depyt ">homepage</a></em><br>
+    <em>34a09d8 — <a href="https://github.com/samoht/depyt ">homepage</a></em><br>
 </div>
 <hr width="100%">
 <br>
@@ -127,35 +127,28 @@ Same as <a href="Depyt.html#VALrecord1"><code class="code"><span class="construc
 
 <pre><span id="TYPEcase"><span class="keyword">type</span> <code class="type">'a</code> case</span> </pre>
 <div class="info ">
-The type for representing variant cases.<br>
+The type for representing variant cases of type <code class="code"><span class="keywordsign">'</span>a</code>.<br>
 </div>
 
 
-<pre><span id="TYPEcase0"><span class="keyword">type</span> <code class="type">'a</code> case0</span> </pre>
+<pre><span id="TYPEcase_constr"><span class="keyword">type</span> <code class="type">'a</code> case_constr</span> </pre>
 <div class="info ">
-The type for representing a variant of type <code class="code"><span class="keywordsign">'</span>a</code> with 0 arguments,
-    e.g. <code class="code"><span class="constructor">Foo</span></code>.<br>
+The type for representing case constructors for the type <code class="code"><span class="keywordsign">'</span>a</code>.<br>
 </div>
 
 
-<pre><span id="TYPEcase1"><span class="keyword">type</span> <code class="type">('a, 'b)</code> case1</span> </pre>
-<div class="info ">
-The type for representing a variant of type <code class="code"><span class="keywordsign">'</span>a</code> with 1 argument
-    of type <code class="code"><span class="keywordsign">'</span>b</code>, e. g. <code class="code"><span class="constructor">Foo</span> <span class="keyword">of</span> <span class="keywordsign">'</span>b</code>.<br>
-</div>
-
-
-<pre><span id="VALcase0"><span class="keyword">val</span> case0</span> : <code class="type">string -> 'a -> 'a <a href="Depyt.html#TYPEcase">case</a> * 'a <a href="Depyt.html#TYPEcase0">case0</a></code></pre><div class="info ">
+<pre><span id="VALcase0"><span class="keyword">val</span> case0</span> : <code class="type">string -> 'a -> 'a <a href="Depyt.html#TYPEcase">case</a> * 'a <a href="Depyt.html#TYPEcase_constr">case_constr</a></code></pre><div class="info ">
 <code class="code">case0 n v</code> is a representation of a variant case <code class="code">n</code> with no
-    argument. e.g.
+    argument and a representation of its constructor. e.g.
 <p>
 
     <pre class="codepre"><code class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;t&nbsp;=&nbsp;<span class="constructor">Foo</span>
+
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;foo&nbsp;=&nbsp;case0&nbsp;<span class="string">"Foo"</span>&nbsp;<span class="constructor">Foo</span>
 &nbsp;&nbsp;&nbsp;&nbsp;</code></pre><br>
 </div>
 
-<pre><span id="VALcase1"><span class="keyword">val</span> case1</span> : <code class="type">string -> 'b <a href="Depyt.html#TYPEt">t</a> -> ('b -> 'a) -> 'a <a href="Depyt.html#TYPEcase">case</a> * ('b -> 'a <a href="Depyt.html#TYPEcase0">case0</a>)</code></pre><div class="info ">
+<pre><span id="VALcase1"><span class="keyword">val</span> case1</span> : <code class="type">string -><br>       'b <a href="Depyt.html#TYPEt">t</a> -> ('b -> 'a) -> 'a <a href="Depyt.html#TYPEcase">case</a> * ('b -> 'a <a href="Depyt.html#TYPEcase_constr">case_constr</a>)</code></pre><div class="info ">
 <code class="code">case1 n t c</code> is a representation of a variant case <code class="code">n</code> with 1
     argument of type <code class="code">t</code> and constructor <code class="code">c</code>. e.g.
 <p>
@@ -166,7 +159,7 @@ The type for representing a variant of type <code class="code"><span class="keyw
 &nbsp;&nbsp;&nbsp;&nbsp;</code></pre><br>
 </div>
 
-<pre><span id="VALvariant"><span class="keyword">val</span> variant</span> : <code class="type">string -> 'a <a href="Depyt.html#TYPEcase">case</a> list -> ('a -> 'a <a href="Depyt.html#TYPEcase0">case0</a>) -> 'a <a href="Depyt.html#TYPEt">t</a></code></pre><div class="info ">
+<pre><span id="VALvariant"><span class="keyword">val</span> variant</span> : <code class="type">string -> 'a <a href="Depyt.html#TYPEcase">case</a> list -> ('a -> 'a <a href="Depyt.html#TYPEcase_constr">case_constr</a>) -> 'a <a href="Depyt.html#TYPEt">t</a></code></pre><br>
 <code class="code">variant n c p</code> is a representation of a variant type containing
     the cases <code class="code">c</code> and using <code class="code">p</code> to deconstruct values, e.g.
 <p>
@@ -174,12 +167,11 @@ The type for representing a variant of type <code class="code"><span class="keyw
     <pre class="codepre"><code class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;t&nbsp;=&nbsp;<span class="constructor">Foo</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Bar</span>&nbsp;<span class="keyword">of</span>&nbsp;string
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;t&nbsp;=
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;foo,&nbsp;mkfoo&nbsp;=&nbsp;case0&nbsp;<span class="string">"Foo"</span>&nbsp;<span class="constructor">Foo</span>&nbsp;<span class="keyword">in</span>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;bar,&nbsp;mkbar&nbsp;=&nbsp;case1&nbsp;<span class="string">"Bar"</span>&nbsp;string&nbsp;(<span class="keyword">fun</span>&nbsp;x&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Bar</span>&nbsp;x)&nbsp;<span class="keyword">in</span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;foo,&nbsp;mk_foo&nbsp;=&nbsp;case0&nbsp;<span class="string">"Foo"</span>&nbsp;<span class="constructor">Foo</span>&nbsp;<span class="keyword">in</span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;bar,&nbsp;mk_bar&nbsp;=&nbsp;case1&nbsp;<span class="string">"Bar"</span>&nbsp;string&nbsp;(<span class="keyword">fun</span>&nbsp;x&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Bar</span>&nbsp;x)&nbsp;<span class="keyword">in</span>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;variant&nbsp;<span class="string">"t"</span>&nbsp;[foo;&nbsp;bar]
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;@@&nbsp;<span class="keyword">function</span>&nbsp;<span class="constructor">Foo</span>&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;mkfoo&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Bar</span>&nbsp;x&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;mkbar&nbsp;x
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;@@&nbsp;<span class="keyword">function</span>&nbsp;<span class="constructor">Foo</span>&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;mk_foo&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Bar</span>&nbsp;x&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;mk_bar&nbsp;x
 &nbsp;&nbsp;&nbsp;&nbsp;</code></pre><br>
-</div>
 
 <pre><span id="VALenum"><span class="keyword">val</span> enum</span> : <code class="type">string -> (string * 'a) list -> 'a <a href="Depyt.html#TYPEt">t</a></code></pre><div class="info ">
 <code class="code">enum n l</code> is a representation of the variant type which has
@@ -220,7 +212,7 @@ The type for representing a variant of type <code class="code"><span class="keyw
     pre-determine the size of the buffer.<br>
 </div>
 
-<pre><span id="VALread"><span class="keyword">val</span> read</span> : <code class="type">'a <a href="Depyt.html#TYPEt">t</a> -> Mstruct.t -> ('a, string) Pervasives.result</code></pre><div class="info ">
+<pre><span id="VALread"><span class="keyword">val</span> read</span> : <code class="type">'a <a href="Depyt.html#TYPEt">t</a> -> Mstruct.t -> ('a, string) Result.result</code></pre><div class="info ">
 <code class="code">read t</code> reads a serialization of a value of type <code class="code">t</code>.<br>
 </div>
 
