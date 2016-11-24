@@ -189,18 +189,26 @@ val equal: 'a t -> 'a -> 'a -> bool
 val compare: 'a t -> 'a -> 'a -> int
 (** [compare t] compares values of type [t]. *)
 
-val size_of: 'a t -> 'a -> int
-(** [size_of t] is the size needed to serialize values of type [t]. *)
-
 type buffer = Cstruct.t
 (** The type for buffers. *)
 
-val write: 'a t -> buffer -> pos:int -> 'a -> int
-(** [write t] serializes values of type [t]. Use [size_of] to
-    pre-determine the size of the buffer. *)
+(** Parsing and unparsing. *)
+module type Parser = sig
 
-val read: 'a t ->  buffer -> pos:int -> int * 'a
-(** [read t] reads a serialization of a value of type [t]. *)
+  val size_of: 'a t -> 'a -> int
+  (** [size_of t] is the size needed to serialize values of type [t]. *)
+
+  val write: 'a t -> buffer -> pos:int -> 'a -> int
+  (** [write t] serializes values of type [t]. Use [size_of] to
+      pre-determine the size of the buffer. *)
+
+  val read: 'a t ->  buffer -> pos:int -> int * [`Ok of 'a | `Error of string]
+  (** [read t] reads a serialization of a value of type [t]. *)
+
+end
+
+(** Binary parser and unparser. *)
+module Bin: Parser
 
 val test: 'a t -> 'a Alcotest.testable
 (** [test t] is a test check for values of type [t]. *)

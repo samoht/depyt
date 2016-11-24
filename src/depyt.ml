@@ -438,21 +438,27 @@ end
 
 let pp = Pp.t
 
+type buffer = Cstruct.t
+
 type 'a size_of = 'a -> int
+type 'a write = buffer -> pos:int -> 'a -> int
+type 'a read = buffer -> pos:int -> int * [`Ok of 'a | `Error of string]
 
-module Size_of = struct
+module Bin = struct
 
-  let unit () = 0
-  let int8 (_:int) = 1
-  let int (_:int) = 8
-  let string s = (int 0) + String.length s
-  let list l x = List.fold_left (fun acc x -> acc + l x) (int 0) x
-  let pair a b (x, y) = a x + b y
-  let option o = function
+  module Size_of = struct
+
+    let unit () = 0
+    let int8 (_:int) = 1
+    let int (_:int) = 8
+    let string s = (int 0) + String.length s
+    let list l x = List.fold_left (fun acc x -> acc + l x) (int 0) x
+    let pair a b (x, y) = a x + b y
+    let option o = function
     | None   -> int 0
     | Some x -> (int 0) + o x
 
-  let rec t: type a. a t -> a size_of = function
+    let rec t: type a. a t -> a size_of = function
     | Prim t     -> prim t
     | List l     -> list (t l)
     | Pair (x,y) -> pair (t x) (t y)
@@ -460,41 +466,33 @@ module Size_of = struct
     | Record r   -> record r
     | Variant v  -> variant v
 
-  and prim: type a. a prim -> a size_of = function
+    and prim: type a. a prim -> a size_of = function
     | Unit   -> unit
     | Int    -> int
     | String -> string
 
-  and record: type a. a record -> a size_of = fun r x ->
-    match r.rfields with
-    | F1 (a, _)                -> field a x
-    | F2 (a, b, _)             -> field a x + field b x
-    | F3 (a, b, c, _)          -> field a x + field b x + field c x
-    | F4 (a, b, c, d, _)       -> field a x + field b x + field c x + field d x
-    | F5 (a, b, c, d, e, _)    -> field a x + field b x + field c x + field d x
-                                  + field e x
-    | F6 (a, b, c, d, e, f, _) -> field a x + field b x + field c x + field d x
-                                  + field e x + field f x
+    and record: type a. a record -> a size_of = fun r x ->
+      match r.rfields with
+      | F1 (a, _)                -> field a x
+      | F2 (a, b, _)             -> field a x + field b x
+      | F3 (a, b, c, _)          -> field a x + field b x + field c x
+      | F4 (a, b, c, d, _)       -> field a x + field b x + field c x + field d x
+      | F5 (a, b, c, d, e, _)    -> field a x + field b x + field c x + field d x
+                                    + field e x
+      | F6 (a, b, c, d, e, f, _) -> field a x + field b x + field c x + field d x
+                                    + field e x + field f x
 
-  and field: type a b. (a, b) field -> a size_of = fun f x ->
-    t f.ftype (f.fget x)
+    and field: type a b. (a, b) field -> a size_of = fun f x ->
+      t f.ftype (f.fget x)
 
-  and variant: type a. a variant -> a size_of = fun v x ->
-    match v.vget x with
-    | CV0 _       -> (int8 0)
-    | CV1 (x, vx) -> (int8 0) + t x.ctype1 vx
+    and variant: type a. a variant -> a size_of = fun v x ->
+      match v.vget x with
+      | CV0 _       -> (int8 0)
+      | CV1 (x, vx) -> (int8 0) + t x.ctype1 vx
 
-end
+  end
 
-let size_of = Size_of.t
-
-type buffer = Cstruct.t
-
-type 'a write = buffer -> pos:int -> 'a -> int
-
-module Write = struct
-
-  module Cstruct = struct
+  module Write = struct
 
     let unit _ ~pos () = pos
     let int8 buf ~pos i = Cstruct.set_uint8 buf pos i; pos+1
@@ -582,47 +580,48 @@ module Write = struct
 
   end
 
-end
+  module Read = struct
 
-let write = Write.Cstruct.t
+    let (>|=) (pos, x) f =
+      match x with
+      | `Ok x    -> pos, `Ok (f x)
+      | `Error e -> pos, `Error e
 
-type 'a read = buffer -> pos:int -> int * 'a
+    let (>>=) (pos, x) f =
+      match x with
+      | `Ok x    -> f (pos, x)
+      | `Error e -> pos, `Error e
 
-module Read = struct
+    let unit _ ~pos = pos, `Ok ()
+    let int8 buf ~pos = pos+1, `Ok (Cstruct.get_uint8 buf pos)
 
-  module Cstruct = struct
-
-    let (>|=) (pos, x) f = (pos, f x)
-    let (>>=) = (|>)
-
-    let unit _ ~pos = pos, ()
-    let int8 buf ~pos = pos+1, Cstruct.get_uint8 buf pos
-    let int buf ~pos = pos+8, (Int64.to_int @@ Cstruct.BE.get_uint64 buf pos)
+    let int buf ~pos =
+      pos+8, `Ok (Int64.to_int @@ Cstruct.BE.get_uint64 buf pos)
 
     let string buf ~pos =
-      let pos, len = int buf ~pos in
+      int buf ~pos >>= fun (pos, len) ->
       let str = Bytes.create len in
       Cstruct.blit_to_string buf pos str 0 len;
-      pos+len, Bytes.unsafe_to_string str
+      pos+len, `Ok (Bytes.unsafe_to_string str)
 
     let list l buf ~pos =
-      let pos, len = int buf ~pos in
+      int buf ~pos >>= fun (pos, len) ->
       let rec aux acc ~pos = function
-      | 0 -> pos, List.rev acc
+      | 0 -> pos, `Ok (List.rev acc)
       | n ->
-          let pos, x = l buf ~pos in
+          l buf ~pos >>= fun (pos, x) ->
           aux (x :: acc) ~pos (n - 1)
       in
       aux [] ~pos len
 
-    let pair a b buf ~pos =
+    let pair: type a b. a read -> b read -> (a * b) read = fun a b buf ~pos ->
       a buf ~pos >>= fun (pos, a) ->
-      b buf ~pos >>= fun (pos, b) ->
-      pos, (a, b)
+      b buf ~pos >|= fun b ->
+      (a, b)
 
-    let option o buf ~pos =
+    let option: type a. a read -> a option read = fun o buf ~pos ->
       int8 buf ~pos >>= function
-      | pos, 0 -> pos, None
+      | pos, 0 -> pos, `Ok None
       | pos, _ -> o buf ~pos >|= fun x -> Some x
 
     let rec t: type a. a t -> a read = function
@@ -683,13 +682,26 @@ module Read = struct
 
     and case: type a. a case' -> a read = fun c buf ~pos ->
       match c with
-      | C0 c -> pos, c.c0
+      | C0 c -> pos, `Ok c.c0
       | C1 c -> t c.ctype1 buf ~pos >|= c.c1
 
   end
+
+  let size_of = Size_of.t
+  let read = Read.t
+  let write = Write.t
+
 end
 
-let read = Read.Cstruct.t
+module Parse_json = struct
+
+end
+
+module type Parser = sig
+  val size_of: 'a t -> 'a -> int
+  val write: 'a t -> buffer -> pos:int -> 'a -> int
+  val read: 'a t ->  buffer -> pos:int -> int * [`Ok of 'a | `Error of string]
+end
 
 let test t = Alcotest.testable (pp t) (equal t)
 

@@ -81,11 +81,11 @@ let test_compare () =
   Alcotest.(check int) __LOC__ (compare e e3 e4) ~-1;
   Alcotest.(check int) __LOC__ (compare e e4 e1) 1
 
-let test_write () =
+let test_bin_write () =
   let check t x =
-    let len = size_of t x in
+    let len = Bin.size_of t x in
     let buf = Cstruct.create len in
-    let len'= write t buf ~pos:0 x in
+    let len'= Bin.write t buf ~pos:0 x in
     let msg = Fmt.strf "%a\n%s" (pp t) x in
     Alcotest.(check int) (msg __LOC__) len len'
   in
@@ -98,15 +98,17 @@ let test_write () =
   check e e2;
   check e e3
 
-let test_read () =
+let test_bin_read () =
   let check t x =
-    let len = size_of t x in
+    let len = Bin.size_of t x in
     let buf = Cstruct.create len in
-    let len' = write t buf ~pos:0 x in
+    let len' = Bin.write t buf ~pos:0 x in
     Alcotest.(check int) __LOC__ len len';
-    let len', y = read t buf ~pos:0 in
+    let len', y = Bin.read t buf ~pos:0 in
     Alcotest.(check int) __LOC__ len len';
-    Alcotest.(check @@ test t) __LOC__ x y
+    match y with
+    | `Ok y    -> Alcotest.(check @@ test t) __LOC__ x y
+    | `Error e -> Alcotest.fail (__LOC__ ^ "\n" ^ e)
   in
   check r r1;
   check r r2;
@@ -122,7 +124,7 @@ let () =
     "basic", [
       "equal"  , `Quick, test_equal;
       "compare", `Quick, test_compare;
-      "write"  , `Quick, test_write;
-      "read"   , `Quick, test_read;
+      "write"  , `Quick, test_bin_write;
+      "read"   , `Quick, test_bin_read;
     ]
   ]
