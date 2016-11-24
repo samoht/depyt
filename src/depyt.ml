@@ -102,22 +102,23 @@ and ('a, 'b) field = {
 and 'a variant = {
   vwit  : 'a Witness.t;
   vname : string;
-  vcases: 'a case array;
-  vget  : 'a -> 'a case0;
+  vcases: 'a case' array;
+  vget  : 'a -> 'a case_v;
 }
 
-and 'a case =
-  | C0: 'a case0 -> 'a case
-  | C1: ('a, 'b) case1 -> 'a case
+and 'a case' =
+  | C0: 'a case0 -> 'a case'
+  | C1: ('a, 'b) case1 -> 'a case'
+
+and 'a case_v =
+  | CV0: 'a case0 -> 'a case_v
+  | CV1: ('a, 'b) case1 * 'b -> 'a case_v
 
 and 'a case0 = {
   ctag0 : int ref;
   cname0: string;
   c0    : 'a;
-  cargs : arg list;
 }
-
-and arg = Arg: 'a t * 'a -> arg
 
 and ('a, 'b) case1 = {
   ctag1 : int ref;
@@ -127,6 +128,9 @@ and ('a, 'b) case1 = {
 }
 
 type _ a_field = Field: ('a, 'b) field -> 'a a_field
+
+type 'a case = int -> 'a case'
+type 'a case_constr = 'a case_v
 
 let unit = Prim Unit
 let int = Prim Int
@@ -166,42 +170,43 @@ let record6 rname a b c d e f g =
 
 (* variants *)
 
-let case0 cname0 c0 =
-  let ctag0 = ref (-1) in
-  let x = { ctag0; cname0; c0; cargs = [] } in
-  C0 x, x
+let set_tag n t i =
+  if !t = -1 then t := i
+  else if !t = i then ()
+  else failwith (n ^ " is already used in another variant at \
+                      a different position.")
 
-let app1:('a, 'b) case1 -> 'b t -> 'b -> 'a case0 = fun c bt b ->
-  let c0 = c.c1 b in
-  { ctag0 = c.ctag1; cname0 = c.cname1; c0; cargs = [ Arg (bt, b) ] }
+let check_tag n t =
+  if !t = -1 then failwith (n ^ " has not been initialized yet")
+
+let case0 cname0 c0 =
+  let ctag0 = ref ~-1 in
+  let c0 = { ctag0; cname0; c0 } in
+  (fun i -> set_tag cname0 ctag0 i; C0 c0), CV0 c0
 
 let case1 cname1 ctype1 c1 =
-  let ctag1 = ref (-1) in
-  let x = { ctag1; cname1; ctype1; c1 } in C1 x, fun y -> app1 x ctype1 y
+  let ctag1 = ref ~-1 in
+  let c1 = { ctag1; cname1; ctype1; c1 } in
+  (fun i -> set_tag cname1 ctag1 i; C1 c1),
+  (fun v -> check_tag cname1 ctag1; CV1 (c1, v))
 
 let variant vname vcases vget =
   let vwit = Witness.make () in
-  let set n t i =
-    if !t = -1 then t := i
-    else if !t = i then ()
-    else failwith (n ^ " is already used in another variant at \
-                        a different position.")
-  in
-  List.iteri (fun i -> function
-      | C0 { ctag0; cname0; _ } -> set cname0 ctag0 i
-      | C1 { ctag1; cname1; _ } -> set cname1 ctag1 i
-    ) vcases;
+  let vcases = List.mapi (fun i c -> c i) vcases in
   let vcases = Array.of_list vcases in
   Variant { vwit; vname; vcases; vget }
 
-let enum name l =
-  let constr, mk =
-    List.fold_left (fun (constr, mk) (n, v) ->
-        let c, c0 = case0 n v in
-        c :: constr, (v, c0) :: mk
-      ) ([], []) (List.rev l)
+let enum vname l =
+  let vwit = Witness.make () in
+  let _, vcases, mk =
+    List.fold_left (fun (i, cases, mk) (n, v) ->
+        Printf.eprintf "XXX %d %s\n%!" i n;
+        let c = { ctag0 = ref i; cname0 = n; c0 = v } in
+        i+1, (C0 c :: cases), (v, CV0 c) :: mk
+      ) (0, [], []) l
   in
-  variant name constr (fun x -> List.assq x mk)
+  let vcases = Array.of_list (List.rev vcases) in
+  Variant { vwit; vname; vcases; vget = fun x -> List.assq x mk }
 
 let fields = function
 | F1 (a, _)                -> [Field a]
@@ -280,12 +285,16 @@ module Equal = struct
     t f.ftype (f.fget x) (f.fget y)
 
   and variant: type a. a variant -> a equal = fun v x y ->
-    case0 (v.vget x) (v.vget y)
+    case_v (v.vget x) (v.vget y)
 
-  and case0: type a. a case0 equal = fun x y ->
-    int x.ctag0.contents y.ctag0.contents && list arg x.cargs y.cargs
+  and case_v: type a. a case_v equal = fun x y ->
+    match x, y with
+    | CV0 x      , CV0 y       -> int x.ctag0.contents y.ctag0.contents
+    | CV1 (x, vx), CV1 (y, vy) -> int x.ctag1.contents y.ctag1.contents &&
+                                  eq (x.ctype1, vx) (y.ctype1, vy)
+    | _ -> false
 
-  and arg: arg equal = fun (Arg (tx, x)) (Arg (ty, y)) ->
+  and eq: type a b. (a t * a) -> (b t * b) -> bool = fun (tx, x) (ty, y) ->
     match Refl.eq tx ty with
     | Some Refl -> t tx x y
     | None      -> assert false (* this should never happen *)
@@ -352,14 +361,19 @@ module Compare = struct
     t f.ftype (f.fget x) (f.fget y)
 
   and variant: type a. a variant -> a compare = fun v x y ->
-    case0 (v.vget x) (v.vget y)
+    case_v (v.vget x) (v.vget y)
 
-  and case0: type a. a case0 compare = fun x y ->
-    match int x.ctag0.contents y.ctag0.contents with
-    | 0 -> list arg x.cargs y.cargs
-    | i -> i
+  and case_v: type a. a case_v compare = fun x y ->
+    match x, y with
+    | CV0 x      , CV0 y       -> int x.ctag0.contents y.ctag0.contents
+    | CV0 x      , CV1 (y, _)  -> int x.ctag0.contents y.ctag1.contents
+    | CV1 (x, _) , CV0 y       -> int x.ctag1.contents y.ctag0.contents
+    | CV1 (x, vx), CV1 (y, vy) ->
+        match int x.ctag1.contents y.ctag1.contents with
+        | 0 -> compare (x.ctype1, vx) (y.ctype1, vy)
+        | i -> i
 
-  and arg: arg compare = fun (Arg (tx, x)) (Arg (ty, y)) ->
+  and compare: type a b. (a t * a) -> (b t * b) -> int = fun (tx, x) (ty, y) ->
     match Refl.eq tx ty with
     | Some Refl -> t tx x y
     | None      -> assert false (* this should never happen *)
@@ -417,15 +431,11 @@ module Pp = struct
     t f.ftype ppf (f.fget x)
 
   and variant: type a. a variant -> a Fmt.t = fun v ppf x ->
-    case0 ppf (v.vget x)
+    case_v ppf (v.vget x)
 
-  and case0: type a. a case0 Fmt.t = fun ppf c ->
-    match c.cargs with
-    | [] -> Fmt.string ppf c.cname0
-    | l  ->
-      Fmt.pf ppf "@[<2>%s %a@]" c.cname0 Fmt.(list ~sep:(unit ",@ ") arg) l
-
-  and arg ppf (Arg (tx, x)) = t tx ppf x
+  and case_v: type a. a case_v Fmt.t = fun ppf -> function
+  | CV0 x       -> Fmt.string ppf x.cname0
+  | CV1 (x, vx) -> Fmt.pf ppf "@[<2>%s %a@]" x.cname1 (t x.ctype1) vx
 
 end
 
@@ -473,9 +483,9 @@ module Size_of = struct
     t f.ftype (f.fget x)
 
   and variant: type a. a variant -> a size_of = fun v x ->
-    List.fold_left
-      (fun acc (Arg (ta, a)) -> acc + t ta a) (int8 0)
-      (v.vget x).cargs
+    match v.vget x with
+    | CV0 _       -> (int8 0)
+    | CV1 (x, vx) -> (int8 0) + t x.ctype1 vx
 
 end
 
@@ -544,12 +554,12 @@ module Write = struct
     t f.ftype (f.fget x) buf
 
   and variant: type a. a variant -> a write = fun v x ->
-    case0 (v.vget x)
+    case_v (v.vget x)
 
-  and case0: type a. a case0 write = fun c buf ->
-    buf
-    |> int8 c.ctag0.contents (* FIXME: we support 'only' 256 cases *)
-    |> List.fold_right (fun (Arg (ta, a)) -> t ta a) c.cargs
+  and case_v: type a. a case_v write = fun c buf ->
+    match c with
+    | CV0 c      -> buf |> int8 c.ctag0.contents
+    | CV1 (c, v) -> buf |> int8 c.ctag1.contents |> t c.ctype1 v
 
 end
 
@@ -641,7 +651,7 @@ module Read = struct
     int8 buf >>= fun i -> (* FIXME: we support 'only' 256 variants *)
     case v.vcases.(i) buf
 
-  and case: type a. a case -> a read = fun c buf ->
+  and case: type a. a case' -> a read = fun c buf ->
     match c with
     | C0 c -> Ok c.c0
     | C1 c -> t c.ctype1 buf >|= c.c1

@@ -118,27 +118,23 @@ val record6:
 (** {1 Variants} *)
 
 type 'a case
-(** The type for representing variant cases. *)
+(** The type for representing variant cases of type ['a]. *)
 
-type 'a case0
-(** The type for representing a variant of type ['a] with 0 arguments,
-    e.g. [Foo]. *)
+type 'a case_constr
+(** The type for representing case constructors for the type ['a]. *)
 
-type ('a, 'b) case1
-(** The type for representing a variant of type ['a] with 1 argument
-    of type ['b], e. g. [Foo of 'b]. *)
-
-val case0: string -> 'a -> 'a case * 'a case0
+val case0: string -> 'a -> 'a case * 'a case_constr
 (** [case0 n v] is a representation of a variant case [n] with no
-    argument. e.g.
+    argument and a representation of its constructor. e.g.
 
     {[
       type t = Foo
+
       let foo = case0 "Foo" Foo
     ]}
     *)
 
-val case1: string -> 'b t -> ('b -> 'a) -> 'a case * ('b -> 'a case0)
+val case1: string -> 'b t -> ('b -> 'a) -> 'a case * ('b -> 'a case_constr)
 (** [case1 n t c] is a representation of a variant case [n] with 1
     argument of type [t] and constructor [c]. e.g.
 
@@ -149,7 +145,8 @@ val case1: string -> 'b t -> ('b -> 'a) -> 'a case * ('b -> 'a case0)
     ]}
 *)
 
-val variant: string -> 'a case list -> ('a -> 'a case0) -> 'a t
+val variant: string -> 'a case list -> ('a -> 'a case_constr) -> 'a t
+
 (** [variant n c p] is a representation of a variant type containing
     the cases [c] and using [p] to deconstruct values, e.g.
 
@@ -157,10 +154,10 @@ val variant: string -> 'a case list -> ('a -> 'a case0) -> 'a t
       type t = Foo | Bar of string
 
       let t =
-        let foo, mkfoo = case0 "Foo" Foo in
-        let bar, mkbar = case1 "Bar" string (fun x -> Bar x) in
+        let foo, mk_foo = case0 "Foo" Foo in
+        let bar, mk_bar = case1 "Bar" string (fun x -> Bar x) in
         variant "t" [foo; bar]
-        @@ function Foo -> mkfoo | Bar x -> mkbar x
+        @@ function Foo -> mk_foo | Bar x -> mk_bar x
     ]}
 
   *)
