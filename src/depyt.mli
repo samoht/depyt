@@ -207,8 +207,11 @@ module type Serializer = sig
 
 end
 
-(** Binary parser and unparser. *)
-module Bin: Parser
+(** Binary serializers. *)
+module Bin: Serializer
+
+(** JSON serializers. *)
+module Json: Serializer
 
 val test: 'a t -> 'a Alcotest.testable
 (** [test t] is a test check for values of type [t]. *)
