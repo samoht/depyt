@@ -1,0 +1,38 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link rel="previous" href="Depyt.Bin.html">
+<link rel="Up" href="Depyt.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Depyt" rel="Chapter" href="Depyt.html"><title>Depyt.Json</title>
+</head>
+<body>
+<div class="navbar"><a class="pre" href="Depyt.Bin.html" title="Depyt.Bin">Previous</a>
+&nbsp;<a class="up" href="Depyt.html" title="Depyt">Up</a>
+&nbsp;</div>
+<h1>Module <a href="type_Depyt.Json.html">Depyt.Json</a></h1>
+
+<pre><span class="keyword">module</span> Json: <code class="type"><a href="Depyt.Serializer.html">Serializer</a></code><code class="type"> </code></pre><div class="info module top">
+JSON serializers.<br>
+</div>
+<hr width="100%">
+
+<pre><span id="VALsize_of"><span class="keyword">val</span> size_of</span> : <code class="type">'a <a href="Depyt.html#TYPEt">Depyt.t</a> -> 'a -> int</code></pre><div class="info ">
+<code class="code">size_of t</code> is the size needed to serialize values of type <code class="code">t</code>.<br>
+</div>
+
+<pre><span id="VALwrite"><span class="keyword">val</span> write</span> : <code class="type">'a <a href="Depyt.html#TYPEt">Depyt.t</a> -> <a href="Depyt.html#TYPEbuffer">Depyt.buffer</a> -> pos:int -> 'a -> int</code></pre><div class="info ">
+<code class="code">write t</code> serializes values of type <code class="code">t</code>. Use <code class="code">size_of</code> to
+      pre-determine the size of the buffer.<br>
+</div>
+
+<pre><span id="VALread"><span class="keyword">val</span> read</span> : <code class="type">'a <a href="Depyt.html#TYPEt">Depyt.t</a> -><br>       <a href="Depyt.html#TYPEbuffer">Depyt.buffer</a> -> pos:int -> int * [ `Error of string | `Ok of 'a ]</code></pre><div class="info ">
+<code class="code">read t</code> reads a serialization of a value of type <code class="code">t</code>.<br>
+</div>
+</body></html>

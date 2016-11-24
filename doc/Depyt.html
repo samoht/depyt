@@ -8,6 +8,7 @@
 <link title="Index of types" rel=Appendix href="index_types.html">
 <link title="Index of values" rel=Appendix href="index_values.html">
 <link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
 <link title="Depyt" rel="Chapter" href="Depyt.html"><link title="Depyt" rel="Section" href="#1_Depyt">
 <link title="Primitives" rel="Section" href="#1_Primitives">
 <link title="Records" rel="Section" href="#1_Records">
@@ -24,7 +25,7 @@
 Yet-an-other type combinator library
 <p>
 
-    <em>34a09d8 — <a href="https://github.com/samoht/depyt ">homepage</a></em><br>
+    <em>f0c4436 — <a href="https://github.com/samoht/depyt ">homepage</a></em><br>
 </div>
 <hr width="100%">
 <br>
@@ -203,17 +204,22 @@ The type for representing case constructors for the type <code class="code"><spa
 <code class="code">compare t</code> compares values of type <code class="code">t</code>.<br>
 </div>
 
-<pre><span id="VALsize_of"><span class="keyword">val</span> size_of</span> : <code class="type">'a <a href="Depyt.html#TYPEt">t</a> -> 'a -> int</code></pre><div class="info ">
-<code class="code">size_of t</code> is the size needed to serialize values of type <code class="code">t</code>.<br>
+<pre><span id="TYPEbuffer"><span class="keyword">type</span> <code class="type"></code>buffer</span> = <code class="type">Cstruct.t</code> </pre>
+<div class="info ">
+The type for buffers.<br>
 </div>
 
-<pre><span id="VALwrite"><span class="keyword">val</span> write</span> : <code class="type">'a <a href="Depyt.html#TYPEt">t</a> -> 'a -> Cstruct.t -> Cstruct.t</code></pre><div class="info ">
-<code class="code">write t</code> serializes values of type <code class="code">t</code>. Use <code class="code">size_of</code> to
-    pre-determine the size of the buffer.<br>
+
+<pre><span class="keyword">module type</span> <a href="Depyt.Serializer.html">Serializer</a> = <code class="code"><span class="keyword">sig</span></code> <a href="Depyt.Serializer.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info">
+Serialization.
 </div>
 
-<pre><span id="VALread"><span class="keyword">val</span> read</span> : <code class="type">'a <a href="Depyt.html#TYPEt">t</a> -> Mstruct.t -> ('a, string) Result.result</code></pre><div class="info ">
-<code class="code">read t</code> reads a serialization of a value of type <code class="code">t</code>.<br>
+<pre><span class="keyword">module</span> <a href="Depyt.Bin.html">Bin</a>: <code class="type"><a href="Depyt.Serializer.html">Serializer</a></code><code class="type"> </code></pre><div class="info">
+Binary serializers.
+</div>
+
+<pre><span class="keyword">module</span> <a href="Depyt.Json.html">Json</a>: <code class="type"><a href="Depyt.Serializer.html">Serializer</a></code><code class="type"> </code></pre><div class="info">
+JSON serializers.
 </div>
 
 <pre><span id="VALtest"><span class="keyword">val</span> test</span> : <code class="type">'a <a href="Depyt.html#TYPEt">t</a> -> 'a Alcotest.testable</code></pre><div class="info ">
