@@ -4,6 +4,40 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
+open Result
+
+type (_, _) eq = Refl: ('a, 'a) eq
+
+module Witness : sig
+  type 'a t
+  val make : unit -> 'a t
+  val eq : 'a t -> 'b t -> ('a, 'b) eq option
+end = struct
+
+  type _ equality = ..
+
+  module type Inst = sig
+    type t
+    type _ equality += Eq : t equality
+  end
+
+  type 'a t = (module Inst with type t = 'a)
+
+  let make: type a. unit -> a t = fun () ->
+    let module Inst = struct
+      type t = a
+      type _ equality += Eq : t equality
+    end
+    in
+    (module Inst)
+
+  let eq: type a b. a t -> b t -> (a, b) eq option =
+    fun (module A) (module B) ->
+    match A.Eq with
+    | B.Eq -> Some Refl
+    | _    -> None
+
+end
 
 type _ t =
   | Prim   : 'a prim -> 'a t
@@ -19,6 +53,7 @@ and 'a prim =
   | String : string prim
 
 and 'a record = {
+  rwit   : 'a Witness.t;
   rname  : string;
   rfields: 'a fields;
 }
@@ -65,6 +100,7 @@ and ('a, 'b) field = {
 }
 
 and 'a variant = {
+  vwit  : 'a Witness.t;
   vname : string;
   vcases: 'a case array;
   vget  : 'a -> 'a case0;
@@ -78,10 +114,10 @@ and 'a case0 = {
   ctag0 : int ref;
   cname0: string;
   c0    : 'a;
-  cargs : dyn list;
+  cargs : arg list;
 }
 
-and dyn = Dyn: 'a t * 'a -> dyn
+and arg = Arg: 'a t * 'a -> arg
 
 and ('a, 'b) case1 = {
   ctag1 : int ref;
@@ -105,26 +141,30 @@ let option a = Option a
 let field fname ftype fget = { fname; ftype; fget }
 
 let record1 rname a b =
-  Record { rname; rfields = F1 (a, b) }
+  let rwit = Witness.make () in
+  Record { rwit; rname; rfields = F1 (a, b) }
 
 let record2 rname a b c =
-  Record { rname; rfields = F2 (a, b, c) }
+  let rwit = Witness.make () in
+  Record { rwit; rname; rfields = F2 (a, b, c) }
 
 let record3 rname a b c d =
-  Record { rname; rfields = F3 (a, b, c, d) }
+    let rwit = Witness.make () in
+    Record { rwit; rname; rfields = F3 (a, b, c, d) }
 
 let record4 rname a b c d e =
-  Record { rname; rfields = F4 (a, b, c, d, e) }
+  let rwit = Witness.make () in
+  Record { rwit; rname; rfields = F4 (a, b, c, d, e) }
 
 let record5 rname a b c d e f =
-  Record { rname; rfields = F5 (a, b, c, d, e, f) }
+  let rwit = Witness.make () in
+  Record { rwit; rname; rfields = F5 (a, b, c, d, e, f) }
 
 let record6 rname a b c d e f g =
-  Record { rname; rfields = F6 (a, b, c, d, e, f, g) }
+  let rwit = Witness.make () in
+  Record { rwit; rname; rfields = F6 (a, b, c, d, e, f, g) }
 
 (* variants *)
-
-let dyn t x = Dyn (t, x)
 
 let case0 cname0 c0 =
   let ctag0 = ref (-1) in
@@ -133,13 +173,14 @@ let case0 cname0 c0 =
 
 let app1:('a, 'b) case1 -> 'b t -> 'b -> 'a case0 = fun c bt b ->
   let c0 = c.c1 b in
-  { ctag0 = c.ctag1; cname0 = c.cname1; c0; cargs = [ Dyn (bt, b) ] }
+  { ctag0 = c.ctag1; cname0 = c.cname1; c0; cargs = [ Arg (bt, b) ] }
 
 let case1 cname1 ctype1 c1 =
   let ctag1 = ref (-1) in
   let x = { ctag1; cname1; ctype1; c1 } in C1 x, fun y -> app1 x ctype1 y
 
 let variant vname vcases vget =
+  let vwit = Witness.make () in
   let set n t i =
     if !t = -1 then t := i
     else if !t = i then ()
@@ -151,7 +192,7 @@ let variant vname vcases vget =
       | C1 { ctag1; cname1; _ } -> set cname1 ctag1 i
     ) vcases;
   let vcases = Array.of_list vcases in
-  Variant { vname; vcases; vget }
+  Variant { vwit; vname; vcases; vget }
 
 let enum name l =
   let constr, mk =
@@ -170,6 +211,33 @@ let fields = function
 | F5 (a, b, c, d, e, _)    -> [Field a; Field b; Field c; Field d; Field e]
 | F6 (a, b, c, d, e, f, _) -> [Field a; Field b; Field c; Field d; Field e;
                                Field f]
+
+module Refl = struct
+
+  let prim: type a b. a prim -> b prim -> (a, b) eq option = fun a b ->
+    match a, b with
+    | Unit  , Unit   -> Some Refl
+    | Int   , Int    -> Some Refl
+    | String, String -> Some Refl
+    | _ -> None
+
+  let rec eq: type a b. a t -> b t -> (a, b) eq option = fun a b ->
+    match a, b with
+    | Prim a, Prim b -> prim a b
+    | List a, List b ->
+        (match eq a b with Some Refl -> Some Refl | None -> None)
+    | Option a, Option b ->
+        (match eq a b with Some Refl -> Some Refl | None -> None)
+    | Pair (a0, a1), Pair (b0, b1) ->
+        (match eq a0 b0, eq a1 b1 with
+        | Some Refl, Some Refl -> Some Refl
+        | None, _ | _, None -> None)
+    | Record a, Record b   -> Witness.eq a.rwit b.rwit
+    | Variant a, Variant b -> Witness.eq a.vwit b.vwit
+    | _ -> None
+
+
+end
 
 type 'a equal = 'a -> 'a -> bool
 
@@ -215,11 +283,12 @@ module Equal = struct
     case0 (v.vget x) (v.vget y)
 
   and case0: type a. a case0 equal = fun x y ->
-    int x.ctag0.contents y.ctag0.contents && list dyn x.cargs y.cargs
+    int x.ctag0.contents y.ctag0.contents && list arg x.cargs y.cargs
 
-  and dyn: dyn equal = fun (Dyn (xt, x)) (Dyn (ty, y)) ->
-    (* FIXME: use type (_, _) eq = Eq: ('a, 'a) eq instead *)
-    t xt x (Obj.magic y)
+  and arg: arg equal = fun (Arg (tx, x)) (Arg (ty, y)) ->
+    match Refl.eq tx ty with
+    | Some Refl -> t tx x y
+    | None      -> assert false (* this should never happen *)
 
 end
 
@@ -287,12 +356,13 @@ module Compare = struct
 
   and case0: type a. a case0 compare = fun x y ->
     match int x.ctag0.contents y.ctag0.contents with
-    | 0 -> list dyn x.cargs y.cargs
+    | 0 -> list arg x.cargs y.cargs
     | i -> i
 
-  and dyn: dyn compare = fun (Dyn (xt, x)) (Dyn (yt, y)) ->
-    (* FIXME: type Eq *)
-    t xt x (Obj.magic y)
+  and arg: arg compare = fun (Arg (tx, x)) (Arg (ty, y)) ->
+    match Refl.eq tx ty with
+    | Some Refl -> t tx x y
+    | None      -> assert false (* this should never happen *)
 
 end
 
@@ -353,9 +423,9 @@ module Pp = struct
     match c.cargs with
     | [] -> Fmt.string ppf c.cname0
     | l  ->
-      Fmt.pf ppf "@[<2>%s %a@]" c.cname0 Fmt.(list ~sep:(unit ",@ ") dyn) l
+      Fmt.pf ppf "@[<2>%s %a@]" c.cname0 Fmt.(list ~sep:(unit ",@ ") arg) l
 
-  and dyn ppf (Dyn (tx, x)) = t tx ppf x
+  and arg ppf (Arg (tx, x)) = t tx ppf x
 
 end
 
@@ -403,10 +473,9 @@ module Size_of = struct
     t f.ftype (f.fget x)
 
   and variant: type a. a variant -> a size_of = fun v x ->
-    case0 (v.vget x) x
-
-  and case0: type a. a case0 -> a size_of = fun c x ->
-    List.fold_left (fun acc (Dyn (ta, a)) -> acc + t ta a) (int8 0) c.cargs
+    List.fold_left
+      (fun acc (Arg (ta, a)) -> acc + t ta a) (int8 0)
+      (v.vget x).cargs
 
 end
 
@@ -480,7 +549,7 @@ module Write = struct
   and case0: type a. a case0 write = fun c buf ->
     buf
     |> int8 c.ctag0.contents (* FIXME: we support 'only' 256 cases *)
-    |> List.fold_right (fun (Dyn (ta, a)) -> t ta a) c.cargs
+    |> List.fold_right (fun (Arg (ta, a)) -> t ta a) c.cargs
 
 end
 
@@ -493,12 +562,12 @@ module Read = struct
   let (>>=) x f = match x with Ok x -> f x | Error _ as e -> e
   let (>|=) x f = match x with Ok x -> Ok (f x) | Error _ as e -> e
 
-  let unit t = Ok ()
+  let unit _ = Ok ()
   let int8 t = Ok (Mstruct.get_uint8 t)
   let int t = Ok (Int64.to_int @@ Mstruct.get_be_uint64 t)
   let string t = int t >|= Mstruct.get_string t
 
-  let list xx l t =
+  let list l t =
     int t >>= fun len ->
     let rec aux acc = function
       | 0 -> Ok (List.rev acc)
@@ -519,7 +588,7 @@ module Read = struct
 
   let rec t: type a. a t -> a read = function
     | Prim t     -> prim t
-    | List l     -> list l (t l)
+    | List l     -> list (t l)
     | Pair (x,y) -> pair (t x) (t y)
     | Option x   -> option (t x)
     | Record r   -> record r
@@ -582,38 +651,6 @@ end
 let read = Read.t
 
 let test t = Alcotest.testable (pp t) (equal t)
-
-(*
-type (_, _) eq = Eq: ('a, 'a) eq
-
-let rec eq: 'a t -> 'b t -> ('a, 'b) eq option = fun x y ->
-  match x, y with
-  | Unit, Unit     -> Some Eq
-  | Int , Int      -> Some Eq
-  | String, String -> Some Eq
-  | List a, List b -> (match eq a b with Some Eq -> Some Eq | None -> None)
-  | Pair (a, b), Pair (c, d) ->
-    (match eq a c with
-     | None   -> None
-     | Some _ -> match eq b d with
-       | Some _ -> Some Eq
-       | None   -> None)
-  | Option a, Option b -> (match eq a b with Some _ -> Some Eq | None -> None)
-  | Record a, Record b ->
-    (match record_eq a b with Some _ -> Some Eq | None -> None)
-  | Variant a, Variant b ->
-    (match variant_eq a b with Some _ -> Some Eq | None -> None)
-  | _ -> None
-
-and record_eq: type a b. a record -> b record -> (a, b) eq option = fun x y ->
-  if x == y || String.compare x.rtag y.rtag = 0 then Some Eq
-  else None
-
-and variant_eq: type a b. a variant -> a variant -> (a, b) eq option = fun x y ->
-  if x == y || String.compare x.vtag y.vtag = 0 then Some Eq
-  else None
-*)
-
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Thomas Gazagnaire
