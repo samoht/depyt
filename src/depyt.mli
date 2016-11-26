@@ -6,6 +6,25 @@
 
 (** Yet-an-other type combinator library
 
+    [Depyt] provides type combinators to define runtime representation
+    for OCaml types and {{!generics}generic operations} to manipulate
+    values with a runtime type representation.
+
+    The type combinators supports all the usual {{!primitives}type
+    primitives} but also compact definitions of {{!records}records}
+    and {{!variants}variants}. It also allows to define the runtime
+    representation of {{!recursive}recursive types}.
+
+    [Depyt] is a modern reboot of
+    {{:https://github.com/mirage/dyntype}Dyntype} but using
+    {{:https://en.wikipedia.org/wiki/Generalized_algebraic_data_type}GADT}s-based
+    combinators instead of syntax-extensions. When we originally wrote
+    [Dyntype] (in 2012) GADTs were not available in {i OCaml} and
+    {{:https://github.com/ocaml/camlp4}camlp4} was everywhere -- this
+    is not the case anymore. Finally, [Depyt] avoids some of the
+    performance caveats present in [Dyntype] by avoiding allocating
+    and converting between intermediate formats.
+
     {e %%VERSION%% — {{:%%PKG_HOMEPAGE%% }homepage}} *)
 
 (** {1 Depyt} *)
@@ -13,7 +32,7 @@
 type 'a t
 (** The type for runtime representation of values of type ['a]. *)
 
-(** {1 Primitives} *)
+(** {1:primitives Primitives} *)
 
 val unit: unit t
 (** [unit] is a representation of the unit type. *)
@@ -33,7 +52,7 @@ val option: 'a t -> 'a option t
 val pair: 'a t -> 'b t -> ('a * 'b) t
 (** [pair x y] is a representation of values of type [x * y]. *)
 
-(** {1 Records} *)
+(** {1:records Records} *)
 
 type ('a, 'b) field
 (** The type for fields holding values of type ['b] and belonging to a
@@ -41,7 +60,15 @@ type ('a, 'b) field
 
 val field: string -> 'a t -> ('b -> 'a) -> ('b, 'a) field
 (** [field n t g] is the representation of the field [n] of type [t]
-    with getter [g]. *)
+    with getter [g].
+
+    For instance:
+
+    {[
+    type t = { foo: string option }
+
+    let foo = field "foo" (option string) (fun t -> t.x)]}
+*)
 
 type ('a, 'b, 'c) open_record
 (** The type for representing open records of type ['a] with
@@ -60,7 +87,7 @@ val record: string -> 'b -> ('a, 'b, 'b) open_record
 (** [record n f fs] is the representation of the record called [n] of
     type ['a] using [f] as constructor and with the fields [fs].
 
-    For instance:
+    Putting all together:
 
     {[
       type t = { foo: string; bar = (int * string) list; }
@@ -72,7 +99,7 @@ val record: string -> 'b -> ('a, 'b, 'b) open_record
         |> sealr]}
 *)
 
-(** {1 Variants} *)
+(** {1:variants Variants} *)
 
 type ('a, 'b) case
 (** The type for representing variant cases of type ['a] with
@@ -117,13 +144,17 @@ val (|~):
 
 val variant: string -> 'b -> ('a, 'b, 'b) open_variant
 (** [variant n c p] is a representation of a variant type containing
-    the cases [c] and using [p] to deconstruct values. For instance:
+    the cases [c] and using [p] to deconstruct values.
+
+    Putting all together:
 
     {[
       type t = Foo | Bar of string
 
       let t =
-        variant "t" (fun foo bar -> function Foo -> foo | Bar s -> bar s)
+        variant "t" (fun foo bar -> function
+          | Foo   -> foo
+          | Bar s -> bar s)
         |~ case0 "Foo" Foo
         |~ case1 "Bar" string (fun x -> Bar x)
         |> sealr]}
@@ -139,16 +170,22 @@ val enum: string -> (string * 'a) list -> 'a t
       let t = enum "t" ["Foo", Foo; "Bar", Bar; "Toto", Toto]]}
 *)
 
-(** {1 Recursive definitions}
+(** {1:recursive Recursive definitions}
 
     [Depyt] allows to create a limited form of recursive records and
-    variants. TODO: describe the limitations, e.g. only regular
-    recursion and no use of the generics inside the [mu*] functions.
+    variants.
+
+    {b TODO}: describe the limitations, e.g. only regular recursion and no
+    use of the generics inside the [mu*] functions and the usual
+    caveats with recursive values (such as infinite loops on most of
+    the generics which don't check sharing).
 
 *)
 
 val mu: ('a t -> 'a t) -> 'a t
-(** [mu f] is the representation [r] such that [r = mu r]. For instance:
+(** [mu f] is the representation [r] such that [r = mu r].
+
+    For instance:
 
     {[
       type x = { x: x option }
@@ -161,7 +198,9 @@ val mu: ('a t -> 'a t) -> 'a t
 
 val mu2: ('a t -> 'b t -> 'a t * 'b t) -> 'a t * 'b t
 (** [mu2 f] is the representations [r] and [s] such that [r, s = mu2 r
-    s]. For instance:
+    s].
+
+    For instance:
 
     {[
       type r = { foo: int; bar: string list; z: z option }
@@ -187,7 +226,7 @@ val mu2: ('a t -> 'b t -> 'a t * 'b t) -> 'a t * 'b t
 *)
 
 
-(** {1 Generic Operations}
+(** {1:generics Generic Operations}
 
     Given a value ['a t], it is possible to define generic operations
     on value of type ['a] such as pretty-printing, parsing and
