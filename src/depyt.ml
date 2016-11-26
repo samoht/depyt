@@ -102,23 +102,19 @@ and 'a case_v =
   | CV1: ('a, 'b) case1 * 'b -> 'a case_v
 
 and 'a case0 = {
-  ctag0 : int ref;
+  ctag0 : int;
   cname0: string;
   c0    : 'a;
 }
 
 and ('a, 'b) case1 = {
-  ctag1 : int ref;
+  ctag1 : int;
   cname1: string;
   ctype1: 'b t;
   c1    : 'b -> 'a;
 }
 
 type _ a_field = Field: ('a, 'b) field -> 'a a_field
-
-(* user-visible types for cases *)
-type 'a case = int -> 'a a_case
-type 'a case_constr = 'a case_v
 
 let unit = Prim Unit
 let int = Prim Int
@@ -127,6 +123,22 @@ let string = Prim String
 let list l = List l
 let pair a b = Pair (a, b)
 let option a = Option a
+
+(* fix points *)
+
+let mu: type a. (a t -> a t) -> a t = fun f ->
+  let rec fake_x = { self = (fun () -> Self fake_x) } in
+  let real_x = f (Self fake_x) in
+  fake_x.self <- (fun () -> real_x);
+  real_x
+
+let mu2: type a b. (a t -> b t -> a t * b t) -> a t * b t = fun f ->
+  let rec fake_x = { self = (fun () -> Self fake_x) } in
+  let rec fake_y = { self = (fun () -> Self fake_y) } in
+  let real_x, real_y = f (Self fake_x) (Self fake_y) in
+  fake_x.self <- (fun () -> real_x);
+  fake_y.self <- (fun () -> real_y);
+  real_x, real_y
 
 (* records *)
 
@@ -144,7 +156,7 @@ let app: type a b c d.
     let n, c, fs = r (F1 (f, fs)) in
     n, c, fs
 
-let seal: type a b. (a, b, a) open_record -> a t =
+let sealr: type a b. (a, b, a) open_record -> a t =
   fun r ->
     let rname, c, fs = r F0 in
     let rwit = Witness.make () in
@@ -152,54 +164,43 @@ let seal: type a b. (a, b, a) open_record -> a t =
 
 let (|+) = app
 
-let mu: type a. (a t -> a t) -> a t = fun f ->
-  let rec fake_x = { self = (fun () -> Self fake_x) } in
-  let real_x = f (Self fake_x) in
-  fake_x.self <- (fun () -> real_x);
-  real_x
-
-let mu2: type a b. (a t -> b t -> a t * b t) -> a t * b t = fun f ->
-  let rec fake_x = { self = (fun () -> Self fake_x) } in
-  let rec fake_y = { self = (fun () -> Self fake_y) } in
-  let real_x, real_y = f (Self fake_x) (Self fake_y) in
-  fake_x.self <- (fun () -> real_x);
-  fake_y.self <- (fun () -> real_y);
-  real_x, real_y
-
 (* variants *)
 
-let set_tag n t i =
-  if !t = -1 then t := i
-  else if !t = i then ()
-  else failwith (n ^ " is already used in another variant at \
-                      a different position.")
+type 'a case_p = 'a case_v
 
-let check_tag n t =
-  if !t = -1 then failwith (n ^ " has not been initialized yet")
+type ('a, 'b) case = int -> ('a a_case * 'b)
 
-let case0 cname0 c0 =
-  let ctag0 = ref ~-1 in
-  let c0 = { ctag0; cname0; c0 } in
-  (fun i -> set_tag cname0 ctag0 i; C0 c0), CV0 c0
+let case0 cname0 c0 ctag0 =
+  let c = { ctag0; cname0; c0 } in
+  C0 c, CV0 c
 
-let case1 cname1 ctype1 c1 =
-  let ctag1 = ref ~-1 in
-  let c1 = { ctag1; cname1; ctype1; c1 } in
-  (fun i -> set_tag cname1 ctag1 i; C1 c1),
-  (fun v -> check_tag cname1 ctag1; CV1 (c1, v))
+let case1 cname1 ctype1 c1 ctag1 =
+  let c = { ctag1; cname1; ctype1; c1 } in
+  C1 c, fun v -> CV1 (c, v)
 
-let variant vname vcases vget =
+type ('a, 'b, 'c) open_variant = 'a a_case list -> string * 'c * 'a a_case list
+
+let variant n c vs = n, c, vs
+
+let app v c cs =
+  let n, fc, cs = v cs in
+  let c, f = c (List.length cs) in
+  n, fc f, (c :: cs)
+
+let sealv v =
+  let vname, vget, vcases = v [] in
   let vwit = Witness.make () in
-  let vcases = List.mapi (fun i c -> c i) vcases in
-  let vcases = Array.of_list vcases in
-  Variant { vwit; vname; vcases; vget }
+  let vcases = Array.of_list (List.rev vcases) in
+  Variant { vwit; vname; vcases ; vget }
+
+let (|~) = app
 
 let enum vname l =
   let vwit = Witness.make () in
   let _, vcases, mk =
-    List.fold_left (fun (i, cases, mk) (n, v) ->
-        let c = { ctag0 = ref i; cname0 = n; c0 = v } in
-        i+1, (C0 c :: cases), (v, CV0 c) :: mk
+    List.fold_left (fun (ctag0, cases, mk) (n, v) ->
+        let c = { ctag0; cname0 = n; c0 = v } in
+        ctag0+1, (C0 c :: cases), (v, CV0 c) :: mk
       ) (0, [], []) l
   in
   let vcases = Array.of_list (List.rev vcases) in
@@ -285,8 +286,8 @@ module Equal = struct
 
   and case_v: type a. a case_v equal = fun x y ->
     match x, y with
-    | CV0 x      , CV0 y       -> int x.ctag0.contents y.ctag0.contents
-    | CV1 (x, vx), CV1 (y, vy) -> int x.ctag1.contents y.ctag1.contents &&
+    | CV0 x      , CV0 y       -> int x.ctag0 y.ctag0
+    | CV1 (x, vx), CV1 (y, vy) -> int x.ctag1 y.ctag1 &&
                                   eq (x.ctype1, vx) (y.ctype1, vy)
     | _ -> false
 
@@ -362,11 +363,11 @@ module Compare = struct
 
   and case_v: type a. a case_v compare = fun x y ->
     match x, y with
-    | CV0 x      , CV0 y       -> int x.ctag0.contents y.ctag0.contents
-    | CV0 x      , CV1 (y, _)  -> int x.ctag0.contents y.ctag1.contents
-    | CV1 (x, _) , CV0 y       -> int x.ctag1.contents y.ctag0.contents
+    | CV0 x      , CV0 y       -> int x.ctag0 y.ctag0
+    | CV0 x      , CV1 (y, _)  -> int x.ctag0 y.ctag1
+    | CV1 (x, _) , CV0 y       -> int x.ctag1 y.ctag0
     | CV1 (x, vx), CV1 (y, vy) ->
-        match int x.ctag1.contents y.ctag1.contents with
+        match int x.ctag1 y.ctag1 with
         | 0 -> compare (x.ctype1, vx) (y.ctype1, vy)
         | i -> i
 
@@ -528,9 +529,9 @@ module Bin = struct
 
     and case_v: type a. a case_v write = fun buf ~pos c ->
       match c with
-      | CV0 c     -> int8 buf ~pos c.ctag0.contents
+      | CV0 c     -> int8 buf ~pos c.ctag0
       | CV1 (c,v) ->
-          int8 buf ~pos c.ctag1.contents >>= fun pos ->
+          int8 buf ~pos c.ctag1 >>= fun pos ->
           t c.ctype1 buf ~pos v
 
   end

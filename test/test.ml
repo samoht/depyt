@@ -16,11 +16,11 @@ let r, z =
       |+ field "foo" int (fun t -> t.foo)
       |+ field "bar" (list string) (fun t -> t.bar)
       |+ field "z" (option z) (fun t -> t.z)
-      |> seal,
+      |> sealr,
       record "z" (fun x r -> { x; r })
       |+ field "x" int (fun t -> t.x)
       |+ field "r" (list r) (fun t -> t.r)
-      |> seal
+      |> sealr
     )
 
 let r1 = { foo = 3; bar = ["aaa";"b"]; z = None }
@@ -31,9 +31,10 @@ type my_v =
   | Bar of int
 
 let v =
-  let foo, mkfoo = case0 "Foo" Foo in
-  let bar, mkbar = case1 "Bar" int (fun x -> Bar x) in
-  variant "v" [foo; bar] (function Foo -> mkfoo | Bar x -> mkbar x)
+  variant "v" (fun foo bar -> function Foo -> foo | Bar x -> bar x)
+  |~ case0 "Foo" Foo
+  |~ case1 "Bar" int (fun x -> Bar x)
+  |> sealv
 
 type my_e = Fooe | Bars | Toto | Tata
 let e = enum "e" ["Fooe", Fooe; "Bars", Bars; "Toto", Toto; "Tata", Tata]

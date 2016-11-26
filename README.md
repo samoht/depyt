@@ -13,9 +13,10 @@ For instance, to define variants:
 # open Depyt;;
 # type t = Foo | Bar of string option;;
 # let t =
-    let foo, mkfoo = case0 "Foo" Foo in
-    let bar, mkbar = case1 "Bar" (option string) (fun x -> Bar x) in
-    variant "v" [foo; bar] @@ function Foo -> mkfoo | Bar x -> mkbar x;;
+    variant "v" (fun foo bar -> function Foo -> foo | Bar x -> bar)
+    |~ case0 "Foo" Foo
+    |~ case1 "Bar" (option string) (fun x -> Bar x)
+    |> sealv
 val t : t Depyt.t = <abstr>
 
 # Fmt.pr "t = %a\n" (pp t) Foo;;
@@ -40,7 +41,7 @@ To define records:
     record "r" (fun foo bar -> { foo; bar })
     |+ field "foo" int (fun t -> t.foo)
     |+ field "bar" (list string) (fun t -> t.bar)
-    |> seal
+    |> sealr
 va t : t Depyt.t = <abstr>
 
 # Fmt.pr "t = %a\n" (pp t) { foor = 3; bar = ["foo"] };;

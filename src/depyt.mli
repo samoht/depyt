@@ -51,12 +51,12 @@ val field: string -> 'a t -> ('b -> 'a) -> ('b, 'a) field
 
 type ('a, 'b, 'c) open_record
 (** The type for representing open records of type ['a] with
-    constructors of type ['c]. ['a] represents the fields missings to
-    the record, e.g. an open record can be {{!seal}sealed} when ['a =
-    'c]. *)
+    constructors of type ['b]. ['c] represents the fields missings to
+    the record, e.g. an open record initially holds ['c = 'b] and it
+    can can be {{!seal}sealed} when ['c = 'a]. *)
 
-val seal: ('a, 'b, 'a) open_record -> 'a t
-(** [seal r] seal the open record [r]. *)
+val sealr: ('a, 'b, 'a) open_record -> 'a t
+(** [sealr r] seal the open record [r]. *)
 
 val (|+):
   ('a, 'b, 'c -> 'd) open_record -> ('a, 'c) field -> ('a, 'b, 'd) open_record
@@ -75,21 +75,22 @@ val record: string -> 'b -> ('a, 'b, 'b) open_record
         record "t" (fun foo -> { foo })
         |+ field "foo" string (fun t -> t.foo)
         |+ field "bar" (list (pair int string)) (fun t -> t.bar)
-        |> seal
+        |> sealr
     ]}
 *)
 
 (** {1 Variants} *)
 
-type 'a case
-(** The type for representing variant cases of type ['a]. *)
+type ('a, 'b) case
+(** The type for representing variant cases of type ['a] with
+    patterns of type ['b]. *)
 
-type 'a case_constr
-(** The type for representing case constructors for the type ['a]. *)
+type 'a case_p
+(** The type for representing patterns for a variant of type ['a]. *)
 
-val case0: string -> 'a -> 'a case * 'a case_constr
+val case0: string -> 'a -> ('a, 'a case_p) case
 (** [case0 n v] is a representation of a variant case [n] with no
-    argument and a representation of its constructor. e.g.
+    argument and a singleton pattern. e.g.
 
     {[
       type t = Foo
@@ -98,9 +99,10 @@ val case0: string -> 'a -> 'a case * 'a case_constr
     ]}
 *)
 
-val case1: string -> 'b t -> ('b -> 'a) -> 'a case * ('b -> 'a case_constr)
+val case1: string -> 'b t -> ('b -> 'a) -> ('a, 'b -> 'a case_p) case
 (** [case1 n t c] is a representation of a variant case [n] with 1
-    argument of type [t] and constructor [c]. e.g.
+    argument of type [t] and a pattern [c] an function with one argument
+    of type [t]. e.g.
 
     {[
       type t = Foo of string
@@ -109,19 +111,31 @@ val case1: string -> 'b t -> ('b -> 'a) -> 'a case * ('b -> 'a case_constr)
     ]}
 *)
 
-val variant: string -> 'a case list -> ('a -> 'a case_constr) -> 'a t
+type ('a, 'b, 'c) open_variant
+(** The type for representing open variants of type ['a] with pattern
+    matching of type ['b]. ['c] represents the missing cases for the
+    variant, e.g. initially variant hols [c' = 'b] and it can be
+    {!{sealed}sealv} when ['c = 'a].  *)
 
+val sealv: ('a, 'b, 'a -> 'a case_p) open_variant -> 'a t
+(** [sealv v] seals the open variant [v]. *)
+
+val (|~):
+  ('a, 'b, 'c -> 'd) open_variant -> ('a, 'c) case -> ('a, 'b, 'd) open_variant
+(** [v |~ c] is [v] augmented with the case [c]. *)
+
+val variant: string -> 'b -> ('a, 'b, 'b) open_variant
 (** [variant n c p] is a representation of a variant type containing
-    the cases [c] and using [p] to deconstruct values, e.g.
+    the cases [c] and using [p] to deconstruct values. For instance:
 
     {[
       type t = Foo | Bar of string
 
       let t =
-        let foo, mk_foo = case0 "Foo" Foo in
-        let bar, mk_bar = case1 "Bar" string (fun x -> Bar x) in
-        variant "t" [foo; bar]
-        @@ function Foo -> mk_foo | Bar x -> mk_bar x
+        variant "t" (fun foo bar -> function Foo -> foo | Bar s -> bar s)
+        |~ case0 "Foo" Foo
+        |~ case1 "Bar" string (fun x -> Bar x)
+        |> sealr
     ]}
 
 *)
