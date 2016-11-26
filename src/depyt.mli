@@ -40,7 +40,7 @@ type ('a, 'b) field
     record of type ['a]. *)
 
 val field: string -> 'a t -> ('b -> 'a) -> ('b, 'a) field
-(** [field1 n t g] is the representation of the field [n] of type [t]
+(** [field n t g] is the representation of the field [n] of type [t]
     with getter [g]. *)
 
 type ('a, 'b, 'c) open_record
@@ -57,17 +57,18 @@ val (|+):
 (** [r |+ f] adds the field [f] to the open record [r]. *)
 
 val record: string -> 'b -> ('a, 'b, 'b) open_record
-(** [record1 n f fs] is the representation of the record called [n] of
+(** [record n f fs] is the representation of the record called [n] of
     type ['a] using [f] as constructor and with the fields [fs].
 
     For instance:
 
     {[
-      type t = { foo: string }
+      type t = { foo: string; bar = (int * string) list; }
 
       let t =
         record "t" (fun foo -> { foo })
         |+ field "foo" string (fun t -> t.foo)
+        |+ field "bar" (list (pair int string)) (fun t -> t.bar)
         |> seal
     ]}
 *)
