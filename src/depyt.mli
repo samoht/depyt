@@ -43,10 +43,22 @@ val field: string -> 'a t -> ('b -> 'a) -> ('b, 'a) field
 (** [field1 n t g] is the representation of the field [n] of type [t]
     with getter [g]. *)
 
-val record1: string -> ('a, 'b) field -> ('b -> 'a) -> 'a t
-(** [record1 n f mk] is the representation of the record called [n] of
-    type ['a], having only one field of type ['b] and with constructor
-    [c].
+type ('a, 'b, 'c) open_record
+(** The type for representing open records of type ['a] with
+    constructors of type ['c]. ['a] represents the fields missings to
+    the record, e.g. an open record can be [{!seal}sealed} when ['a =
+    'c]. *)
+
+val seal: ('a, 'b, 'a) open_record -> 'a t
+(** [seal r] seal the open record [r]. *)
+
+val (|+):
+  ('a, 'b, 'c -> 'd) open_record -> ('a, 'c) field -> ('a, 'b, 'd) open_record
+(** [r |+ f] adds the field [f] to the open record [r]. *)
+
+val record: string -> 'b -> ('a, 'b, 'b) open_record
+(** [record1 n f fs] is the representation of the record called [n] of
+    type ['a] using [f] as constructor and with the fields [fs].
 
     For instance:
 
@@ -54,66 +66,11 @@ val record1: string -> ('a, 'b) field -> ('b -> 'a) -> 'a t
       type t = { foo: string }
 
       let t =
-        record1 "t" (field "foo" string (fun t -> t.foo))
-        @@ fun foo -> { foo }
+        record "t" (fun foo -> { foo })
+        |+ field "foo" string (fun t -> t.foo)
+        |> seal
     ]}
 *)
-
-val record2:
-  string ->
-  ('a, 'b) field ->
-  ('a, 'c) field ->
-  ('b -> 'c -> 'a) -> 'a t
-(** Same as {!record1} but for records with 2 fields. e.g.
-
-    {[
-      type t = { foo: string; bar = int list }
-
-      let t =
-        record2 "t"
-          (field "foo" string (fun t -> t.foo))
-          (field "bar" (list int) (fun t -> t.bar))
-        @@ fun foo bar -> { foo; bar }
-    ]}
-*)
-
-val record3:
-  string ->
-  ('a, 'b) field ->
-  ('a, 'c) field ->
-  ('a, 'd) field ->
-  ('b -> 'c -> 'd -> 'a) -> 'a t
-(** Same as {!record1} but for records with 3 fields. *)
-
-val record4:
-  string ->
-  ('a, 'b) field ->
-  ('a, 'c) field ->
-  ('a, 'd) field ->
-  ('a, 'e) field ->
-  ('b -> 'c -> 'd -> 'e -> 'a) -> 'a t
-(** Same as {!record1} but for records with 4 fields. *)
-
-val record5:
-  string ->
-  ('a, 'b) field ->
-  ('a, 'c) field ->
-  ('a, 'd) field ->
-  ('a, 'e) field ->
-  ('a, 'f) field ->
-  ('b -> 'c -> 'd -> 'e -> 'f -> 'a) -> 'a t
-(** Same as {!record1} but for records with 5 fields. *)
-
-val record6:
-  string ->
-  ('a, 'b) field ->
-  ('a, 'c) field ->
-  ('a, 'd) field ->
-  ('a, 'e) field ->
-  ('a, 'f) field ->
-  ('a, 'g) field ->
-  ('b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'a) -> 'a t
-(** Same as {!record1} but for records with 6 fields. *)
 
 (** {1 Variants} *)
 

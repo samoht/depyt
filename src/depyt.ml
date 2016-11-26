@@ -37,6 +37,18 @@ end = struct
 
 end
 
+(*
+module Hlist = struct
+
+  type _ t =
+    | []  : 'a t
+    | (::): 'a * 'b t -> ('a * 'b) t
+
+  let cons x y = x :: y
+  let empty = []
+end
+*)
+
 type _ t =
   | Prim   : 'a prim -> 'a t
   | List   : 'a t -> 'a list t
@@ -53,43 +65,15 @@ and 'a prim =
 and 'a record = {
   rwit   : 'a Witness.t;
   rname  : string;
-  rfields: 'a fields;
+  rfields: 'a fields_and_constr;
 }
 
-and 'a fields =
-  | F1:
-      ('a, 'b) field *
-      ('b -> 'a) -> 'a fields
-  | F2:
-      ('a, 'b) field *
-      ('a, 'c) field *
-      ('b -> 'c -> 'a) -> 'a fields
-  | F3:
-      ('a, 'b) field *
-      ('a, 'c) field *
-      ('a, 'd) field *
-      ('b -> 'c -> 'd -> 'a) -> 'a fields
-  | F4:
-      ('a, 'b) field *
-      ('a, 'c) field *
-      ('a, 'd) field *
-      ('a, 'e) field *
-      ('b -> 'c -> 'd -> 'e -> 'a) -> 'a fields
-  | F5:
-      ('a, 'b) field *
-      ('a, 'c) field *
-      ('a, 'd) field *
-      ('a, 'e) field *
-      ('a, 'f) field *
-      ('b -> 'c -> 'd -> 'e -> 'f -> 'a) -> 'a fields
-  | F6:
-      ('a, 'b) field *
-      ('a, 'c) field *
-      ('a, 'd) field *
-      ('a, 'e) field *
-      ('a, 'f) field *
-      ('a, 'g) field *
-      ('b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'a) -> 'a fields
+and 'a fields_and_constr =
+  | Fields: ('a, 'b) fields * 'b -> 'a fields_and_constr
+
+and ('a, 'b) fields =
+  | F0: ('a, 'a) fields
+  | F1: ('a, 'b) field * ('a, 'c) fields -> ('a, 'b -> 'c) fields
 
 and ('a, 'b) field = {
   fname: string;
@@ -100,13 +84,13 @@ and ('a, 'b) field = {
 and 'a variant = {
   vwit  : 'a Witness.t;
   vname : string;
-  vcases: 'a case' array;
+  vcases: 'a a_case array;
   vget  : 'a -> 'a case_v;
 }
 
-and 'a case' =
-  | C0: 'a case0 -> 'a case'
-  | C1: ('a, 'b) case1 -> 'a case'
+and 'a a_case =
+  | C0: 'a case0 -> 'a a_case
+  | C1: ('a, 'b) case1 -> 'a a_case
 
 and 'a case_v =
   | CV0: 'a case0 -> 'a case_v
@@ -127,7 +111,8 @@ and ('a, 'b) case1 = {
 
 type _ a_field = Field: ('a, 'b) field -> 'a a_field
 
-type 'a case = int -> 'a case'
+(* user-visible types for cases *)
+type 'a case = int -> 'a a_case
 type 'a case_constr = 'a case_v
 
 let unit = Prim Unit
@@ -140,31 +125,27 @@ let option a = Option a
 
 (* records *)
 
+type ('a, 'b, 'c) open_record =
+  ('a, 'c) fields -> string * 'b * ('a, 'b) fields
+
 let field fname ftype fget = { fname; ftype; fget }
 
-let record1 rname a b =
-  let rwit = Witness.make () in
-  Record { rwit; rname; rfields = F1 (a, b) }
+let record: string -> 'b -> ('a, 'b, 'b) open_record =
+  fun n c fs -> n, c, fs
 
-let record2 rname a b c =
-  let rwit = Witness.make () in
-  Record { rwit; rname; rfields = F2 (a, b, c) }
+let app: type a b c d.
+  (a, b, c -> d) open_record -> (a, c) field -> (a, b, d) open_record
+  = fun r f fs ->
+      let n, c, fs = r (F1 (f, fs)) in
+      n, c, fs
 
-let record3 rname a b c d =
+let seal: type a b. (a, b, a) open_record -> a t =
+  fun r ->
+    let rname, c, fs = r F0 in
     let rwit = Witness.make () in
-    Record { rwit; rname; rfields = F3 (a, b, c, d) }
+    Record { rwit; rname; rfields = Fields (fs, c) }
 
-let record4 rname a b c d e =
-  let rwit = Witness.make () in
-  Record { rwit; rname; rfields = F4 (a, b, c, d, e) }
-
-let record5 rname a b c d e f =
-  let rwit = Witness.make () in
-  Record { rwit; rname; rfields = F5 (a, b, c, d, e, f) }
-
-let record6 rname a b c d e f g =
-  let rwit = Witness.make () in
-  Record { rwit; rname; rfields = F6 (a, b, c, d, e, f, g) }
+let (|+) = app
 
 (* variants *)
 
@@ -205,14 +186,12 @@ let enum vname l =
   let vcases = Array.of_list (List.rev vcases) in
   Variant { vwit; vname; vcases; vget = fun x -> List.assq x mk }
 
-let fields = function
-| F1 (a, _)                -> [Field a]
-| F2 (a, b, _)             -> [Field a; Field b]
-| F3 (a, b, c, _)          -> [Field a; Field b; Field c]
-| F4 (a, b, c, d, _)       -> [Field a; Field b; Field c; Field d]
-| F5 (a, b, c, d, e, _)    -> [Field a; Field b; Field c; Field d; Field e]
-| F6 (a, b, c, d, e, f, _) -> [Field a; Field b; Field c; Field d; Field e;
-                               Field f]
+let rec fields_aux: type a b. (a, b) fields -> a a_field list = function
+| F0        -> []
+| F1 (h, t) -> Field h :: fields_aux t
+
+let fields r = match r.rfields with
+| Fields (f, _) -> fields_aux f
 
 module Refl = struct
 
@@ -276,7 +255,7 @@ module Equal = struct
     | String -> string
 
   and record: type a. a record -> a equal = fun r x y ->
-    List.for_all (function Field f -> field f x y) (fields r.rfields)
+    List.for_all (function Field f -> field f x y) (fields r)
 
   and field: type a  b. (a, b) field -> a equal = fun f x y ->
     t f.ftype (f.fget x) (f.fget y)
@@ -352,7 +331,7 @@ module Compare = struct
       | []           -> 0
       | Field f :: t -> match field f x y with  0 -> aux t | i -> i
     in
-    aux (fields r.rfields)
+    aux (fields r)
 
   and field: type a  b. (a, b) field -> a compare = fun f x y ->
     t f.ftype (f.fget x) (f.fget y)
@@ -402,27 +381,12 @@ module Pp = struct
     | String -> string
 
   and record: type a. a record -> a Fmt.t = fun r ppf x ->
-    match r.rfields with
-    | F1 (a, _)       ->
-        Fmt.pf ppf "@[{ %s = %a }@]" a.fname (field a) x
-    | F2 (a, b, _)    ->
-        Fmt.pf ppf "@[{ %s = %a; %s = %a }@]"
-          a.fname (field a) x b.fname (field b) x
-    | F3 (a, b, c, _) ->
-        Fmt.pf ppf "@[{ %s = %a; %s = %a; %s = %a }@]"
-          a.fname (field a) x b.fname (field b) x c.fname (field c) x
-    | F4 (a, b, c, d, _) ->
-        Fmt.pf ppf "@[{ %s = %a; %s = %a; %s = %a; %s = %a }@]"
-          a.fname (field a) x b.fname (field b) x c.fname (field c) x
-          d.fname (field d) x
-    | F5 (a, b, c, d, e, _) ->
-        Fmt.pf ppf "@[{ %s = %a; %s = %a; %s = %a; %s = %a; %s = %a }@]"
-          a.fname (field a) x b.fname (field b) x c.fname (field c) x
-          d.fname (field d) x e.fname (field e) x
-    | F6 (a, b, c, d, e, f, _) ->
-        Fmt.pf ppf "@[{ %s = %a; %s = %a; %s = %a; %s = %a; %s = %a; %s = %a }@]"
-          a.fname (field a) x b.fname (field b) x c.fname (field c) x
-          d.fname (field d) x e.fname (field e) x f.fname (field f) x
+    let fields = fields r in
+    Fmt.pf ppf "@[{@ ";
+    List.iter (fun (Field t) ->
+        Fmt.pf ppf "%s = %a;@ " t.fname (field t) x
+      ) fields;
+    Fmt.pf ppf "}@]"
 
   and field: type a b. (a, b) field -> a Fmt.t = fun f ppf x ->
     t f.ftype ppf (f.fget x)
@@ -472,15 +436,8 @@ module Bin = struct
     | String -> string
 
     and record: type a. a record -> a size_of = fun r x ->
-      match r.rfields with
-      | F1 (a, _)                -> field a x
-      | F2 (a, b, _)             -> field a x + field b x
-      | F3 (a, b, c, _)          -> field a x + field b x + field c x
-      | F4 (a, b, c, d, _)       -> field a x + field b x + field c x + field d x
-      | F5 (a, b, c, d, e, _)    -> field a x + field b x + field c x + field d x
-                                    + field e x
-      | F6 (a, b, c, d, e, f, _) -> field a x + field b x + field c x + field d x
-                                    + field e x + field f x
+      let fields = fields r in
+      List.fold_left (fun acc (Field f) -> acc + field f x) 0 fields
 
     and field: type a b. (a, b) field -> a size_of = fun f x ->
       t f.ftype (f.fget x)
@@ -493,6 +450,8 @@ module Bin = struct
   end
 
   module Write = struct
+
+    let (>>=) = (|>)
 
     let unit _ ~pos () = pos
     let int8 buf ~pos i = Cstruct.set_uint8 buf pos i; pos+1
@@ -507,8 +466,6 @@ module Bin = struct
     let list l buf ~pos x =
       let pos = int buf ~pos (List.length x) in
       List.fold_left (fun pos i -> l buf ~pos i) pos x
-
-    let (>>=) = (|>)
 
     let pair a b buf ~pos (x, y) =
       a buf ~pos x >>= fun pos ->
@@ -535,35 +492,9 @@ module Bin = struct
     | Int    -> int
     | String -> string
 
-    and record: type a. a record -> a write = fun r buf ~pos x->
-      match r.rfields with
-      | F1 (a, _)          ->
-          field a buf ~pos x
-      | F2 (a, b, _)       ->
-          field a buf ~pos x >>= fun pos ->
-          field b buf ~pos x
-      | F3 (a, b, c, _)    ->
-          field a buf ~pos x >>= fun pos ->
-          field b buf ~pos x >>= fun pos ->
-          field c buf ~pos x
-      | F4 (a, b, c, d, _) ->
-          field a buf ~pos x >>= fun pos ->
-          field b buf ~pos x >>= fun pos ->
-          field c buf ~pos x >>= fun pos ->
-          field d buf ~pos x
-      | F5 (a, b, c, d, e, _) ->
-          field a buf ~pos x >>= fun pos ->
-          field b buf ~pos x >>= fun pos ->
-          field c buf ~pos x >>= fun pos ->
-          field d buf ~pos x >>= fun pos ->
-          field e buf ~pos x
-      | F6 (a, b, c, d, e, f, _) ->
-          field a buf ~pos x >>= fun pos ->
-          field b buf ~pos x >>= fun pos ->
-          field c buf ~pos x >>= fun pos ->
-          field d buf ~pos x >>= fun pos ->
-          field e buf ~pos x >>= fun pos ->
-          field f buf ~pos x
+    and record: type a. a record -> a write = fun r buf ~pos x ->
+      let fields = fields r in
+      List.fold_left (fun pos (Field f) -> field f buf ~pos x) pos fields
 
     and field: type a b. (a, b) field -> a write = fun f buf ~pos x ->
       t f.ftype buf ~pos (f.fget x)
@@ -591,6 +522,8 @@ module Bin = struct
       match x with
       | `Ok x    -> f (pos, x)
       | `Error e -> pos, `Error e
+
+    type 'a res = int * [`Ok of 'a | `Error of string]
 
     let unit _ ~pos = pos, `Ok ()
     let int8 buf ~pos = pos+1, `Ok (Cstruct.get_uint8 buf pos)
@@ -639,39 +572,15 @@ module Bin = struct
 
     and record: type a. a record -> a read = fun r buf ~pos ->
       match r.rfields with
-      | F1 (a, f) ->
-          field a buf ~pos >|= fun a ->
-          f a
-      | F2 (a, b, f) ->
-          field a buf ~pos >>= fun (pos, a) ->
-          field b buf ~pos >|= fun b ->
-          f a b
-      | F3 (a, b, c, f) ->
-          field a buf ~pos >>= fun (pos, a) ->
-          field b buf ~pos >>= fun (pos, b) ->
-          field c buf ~pos >|= fun c ->
-          f a b c
-      | F4 (a, b, c, d, f) ->
-          field a buf ~pos >>= fun (pos, a) ->
-          field b buf ~pos >>= fun (pos, b) ->
-          field c buf ~pos >>= fun (pos, c) ->
-          field d buf ~pos >|= fun d ->
-          f a b c d
-      | F5 (a, b, c, d, e, f) ->
-          field a buf ~pos >>= fun (pos, a) ->
-          field b buf ~pos >>= fun (pos, b) ->
-          field c buf ~pos >>= fun (pos, c) ->
-          field d buf ~pos >>= fun (pos, d) ->
-          field e buf ~pos >|= fun e ->
-          f a b c d e
-      | F6 (a, b, c, d, e, x, f) ->
-          field a buf ~pos >>= fun (pos, a) ->
-          field b buf ~pos >>= fun (pos, b) ->
-          field c buf ~pos >>= fun (pos, c) ->
-          field d buf ~pos >>= fun (pos, d) ->
-          field e buf ~pos >>= fun (pos, e) ->
-          field x buf ~pos >|= fun x ->
-          f a b c d e x
+      | Fields (fs, c) ->
+          let rec aux: type b. pos:int -> b -> (a, b) fields -> a res
+            = fun ~pos f -> function
+            | F0         -> pos, `Ok f
+            | F1 (h, t) ->
+                field h buf ~pos >>= fun (pos, x) ->
+                aux ~pos (f x) t
+          in
+          aux ~pos c fs
 
     and field: type a  b. (a, b) field -> b read = fun f -> t f.ftype
 
@@ -680,7 +589,7 @@ module Bin = struct
       int8 buf ~pos >>= fun (pos, i) ->
       case v.vcases.(i) buf ~pos
 
-    and case: type a. a case' -> a read = fun c buf ~pos ->
+    and case: type a. a a_case -> a read = fun c buf ~pos ->
       match c with
       | C0 c -> pos, `Ok c.c0
       | C1 c -> t c.ctype1 buf ~pos >|= c.c1

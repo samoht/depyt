@@ -25,9 +25,10 @@ open Depyt
 type my_r = { foo: int; bar: string list }
 
 let r =
-  let foo = field "foo" int (fun t -> t.foo) in
-  let bar = field "bar" (list string) (fun t -> t.bar) in
-  record2 "r" foo bar @@ fun foo bar -> { foo; bar }
+  record "r" (fun foo bar -> { foo; bar })
+  |+ field "foo" int (fun t -> t.foo)
+  |+ field "bar" (list string) (fun t -> t.bar)
+  |> seal
 
 type my_v =
   | Foo
