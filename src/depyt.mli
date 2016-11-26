@@ -46,7 +46,7 @@ val field: string -> 'a t -> ('b -> 'a) -> ('b, 'a) field
 type ('a, 'b, 'c) open_record
 (** The type for representing open records of type ['a] with
     constructors of type ['c]. ['a] represents the fields missings to
-    the record, e.g. an open record can be [{!seal}sealed} when ['a =
+    the record, e.g. an open record can be {{!seal}sealed} when ['a =
     'c]. *)
 
 val seal: ('a, 'b, 'a) open_record -> 'a t
