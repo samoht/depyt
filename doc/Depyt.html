@@ -10,11 +10,11 @@
 <link title="Index of modules" rel=Appendix href="index_modules.html">
 <link title="Index of module types" rel=Appendix href="index_module_types.html">
 <link title="Depyt" rel="Chapter" href="Depyt.html"><link title="Depyt" rel="Section" href="#1_Depyt">
-<link title="Primitives" rel="Section" href="#1_Primitives">
-<link title="Records" rel="Section" href="#1_Records">
-<link title="Variants" rel="Section" href="#1_Variants">
-<link title="Recursive definitions" rel="Section" href="#1_Recursivedefinitions">
-<link title="Generic Operations" rel="Section" href="#1_GenericOperations">
+<link title="Primitives" rel="Section" href="#primitives">
+<link title="Records" rel="Section" href="#records">
+<link title="Variants" rel="Section" href="#variants">
+<link title="Recursive definitions" rel="Section" href="#recursive">
+<link title="Generic Operations" rel="Section" href="#generics">
 <title>Depyt</title>
 </head>
 <body>
@@ -26,7 +26,29 @@
 Yet-an-other type combinator library
 <p>
 
-    <em>c423573 — <a href="https://github.com/samoht/depyt ">homepage</a></em><br>
+    <code class="code"><span class="constructor">Depyt</span></code> provides type combinators to define runtime representation
+    for OCaml types and <a href="Depyt.html#generics">generic operations</a> to manipulate
+    values with a runtime type representation.
+<p>
+
+    The type combinators supports all the usual <a href="Depyt.html#primitives">type
+    primitives</a> but also compact definitions of <a href="Depyt.html#records">records</a>
+    and <a href="Depyt.html#variants">variants</a>. It also allows to define the runtime
+    representation of <a href="Depyt.html#recursive">recursive types</a>.
+<p>
+
+    <code class="code"><span class="constructor">Depyt</span></code> is a modern reboot of
+    <a href="https://github.com/mirage/dyntype">Dyntype</a> but using
+    <a href="https://en.wikipedia.org/wiki/Generalized_algebraic_data_type">GADT</a>s-based
+    combinators instead of syntax-extensions. When we originally wrote
+    <code class="code"><span class="constructor">Dyntype</span></code> (in 2012) GADTs were not available in <i>OCaml</i> and
+    <a href="https://github.com/ocaml/camlp4">camlp4</a> was everywhere -- this
+    is not the case anymore. Finally, <code class="code"><span class="constructor">Depyt</span></code> avoids some of the
+    performance caveats present in <code class="code"><span class="constructor">Dyntype</span></code> by avoiding allocating
+    and converting between intermediate formats.
+<p>
+
+    <em>bc3d372 — <a href="https://github.com/samoht/depyt ">homepage</a></em><br>
 </div>
 <hr width="100%">
 <br>
@@ -38,7 +60,7 @@ The type for runtime representation of values of type <code class="code"><span c
 </div>
 
 <br>
-<h1 id="1_Primitives">Primitives</h1><br>
+<h1 id="primitives">Primitives</h1><br>
 
 <pre><span id="VALunit"><span class="keyword">val</span> unit</span> : <code class="type">unit <a href="Depyt.html#TYPEt">t</a></code></pre><div class="info ">
 <code class="code">unit</code> is a representation of the unit type.<br>
@@ -64,7 +86,7 @@ The type for runtime representation of values of type <code class="code"><span c
 <code class="code">pair x y</code> is a representation of values of type <code class="code">x * y</code>.<br>
 </div>
 <br>
-<h1 id="1_Records">Records</h1><br>
+<h1 id="records">Records</h1><br>
 
 <pre><span id="TYPEfield"><span class="keyword">type</span> <code class="type">('a, 'b)</code> field</span> </pre>
 <div class="info ">
@@ -75,7 +97,15 @@ The type for fields holding values of type <code class="code"><span class="keywo
 
 <pre><span id="VALfield"><span class="keyword">val</span> field</span> : <code class="type">string -> 'a <a href="Depyt.html#TYPEt">t</a> -> ('b -> 'a) -> ('b, 'a) <a href="Depyt.html#TYPEfield">field</a></code></pre><div class="info ">
 <code class="code">field n t g</code> is the representation of the field <code class="code">n</code> of type <code class="code">t</code>
-    with getter <code class="code">g</code>.<br>
+    with getter <code class="code">g</code>.
+<p>
+
+    For instance:
+<p>
+
+    <pre class="codepre"><code class="code">&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;t&nbsp;=&nbsp;{&nbsp;foo:&nbsp;string&nbsp;option&nbsp;}
+
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;foo&nbsp;=&nbsp;field&nbsp;<span class="string">"foo"</span>&nbsp;(option&nbsp;string)&nbsp;(<span class="keyword">fun</span>&nbsp;t&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;t.x)</code></pre><br>
 </div>
 
 <pre><span id="TYPEopen_record"><span class="keyword">type</span> <code class="type">('a, 'b, 'c)</code> open_record</span> </pre>
@@ -100,7 +130,7 @@ The type for representing open records of type <code class="code"><span class="k
     type <code class="code"><span class="keywordsign">'</span>a</code> using <code class="code">f</code> as constructor and with the fields <code class="code">fs</code>.
 <p>
 
-    For instance:
+    Putting all together:
 <p>
 
     <pre class="codepre"><code class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;t&nbsp;=&nbsp;{&nbsp;foo:&nbsp;string;&nbsp;bar&nbsp;=&nbsp;(int&nbsp;*&nbsp;string)&nbsp;list;&nbsp;}
@@ -112,7 +142,7 @@ The type for representing open records of type <code class="code"><span class="k
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&gt;&nbsp;sealr</code></pre><br>
 </div>
 <br>
-<h1 id="1_Variants">Variants</h1><br>
+<h1 id="variants">Variants</h1><br>
 
 <pre><span id="TYPEcase"><span class="keyword">type</span> <code class="type">('a, 'b)</code> case</span> </pre>
 <div class="info ">
@@ -167,13 +197,18 @@ The type for representing open variants of type <code class="code"><span class="
 
 <pre><span id="VALvariant"><span class="keyword">val</span> variant</span> : <code class="type">string -> 'b -> ('a, 'b, 'b) <a href="Depyt.html#TYPEopen_variant">open_variant</a></code></pre><div class="info ">
 <code class="code">variant n c p</code> is a representation of a variant type containing
-    the cases <code class="code">c</code> and using <code class="code">p</code> to deconstruct values. For instance:
+    the cases <code class="code">c</code> and using <code class="code">p</code> to deconstruct values.
+<p>
+
+    Putting all together:
 <p>
 
     <pre class="codepre"><code class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;t&nbsp;=&nbsp;<span class="constructor">Foo</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Bar</span>&nbsp;<span class="keyword">of</span>&nbsp;string
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;t&nbsp;=
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;variant&nbsp;<span class="string">"t"</span>&nbsp;(<span class="keyword">fun</span>&nbsp;foo&nbsp;bar&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keyword">function</span>&nbsp;<span class="constructor">Foo</span>&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;foo&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Bar</span>&nbsp;s&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;bar&nbsp;s)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;variant&nbsp;<span class="string">"t"</span>&nbsp;(<span class="keyword">fun</span>&nbsp;foo&nbsp;bar&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keyword">function</span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Foo</span>&nbsp;&nbsp;&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;foo
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Bar</span>&nbsp;s&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;bar&nbsp;s)
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|~&nbsp;case0&nbsp;<span class="string">"Foo"</span>&nbsp;<span class="constructor">Foo</span>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|~&nbsp;case1&nbsp;<span class="string">"Bar"</span>&nbsp;string&nbsp;(<span class="keyword">fun</span>&nbsp;x&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Bar</span>&nbsp;x)
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&gt;&nbsp;sealr</code></pre><br>
@@ -189,15 +224,23 @@ The type for representing open variants of type <code class="code"><span class="
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;t&nbsp;=&nbsp;enum&nbsp;<span class="string">"t"</span>&nbsp;[<span class="string">"Foo"</span>,&nbsp;<span class="constructor">Foo</span>;&nbsp;<span class="string">"Bar"</span>,&nbsp;<span class="constructor">Bar</span>;&nbsp;<span class="string">"Toto"</span>,&nbsp;<span class="constructor">Toto</span>]</code></pre><br>
 </div>
 <br>
-<h1 id="1_Recursivedefinitions">Recursive definitions</h1>
+<h1 id="recursive">Recursive definitions</h1>
 <p>
 
     <code class="code"><span class="constructor">Depyt</span></code> allows to create a limited form of recursive records and
-    variants. TODO: describe the limitations, e.g. only regular
-    recursion and no use of the generics inside the <code class="code">mu*</code> functions.<br>
+    variants.
+<p>
+
+    <b>TODO</b>: describe the limitations, e.g. only regular recursion and no
+    use of the generics inside the <code class="code">mu*</code> functions and the usual
+    caveats with recursive values (such as infinite loops on most of
+    the generics which don't check sharing).<br>
 
 <pre><span id="VALmu"><span class="keyword">val</span> mu</span> : <code class="type">('a <a href="Depyt.html#TYPEt">t</a> -> 'a <a href="Depyt.html#TYPEt">t</a>) -> 'a <a href="Depyt.html#TYPEt">t</a></code></pre><div class="info ">
-<code class="code">mu f</code> is the representation <code class="code">r</code> such that <code class="code">r = mu r</code>. For instance:
+<code class="code">mu f</code> is the representation <code class="code">r</code> such that <code class="code">r = mu r</code>.
+<p>
+
+    For instance:
 <p>
 
     <pre class="codepre"><code class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;x&nbsp;=&nbsp;{&nbsp;x:&nbsp;x&nbsp;option&nbsp;}
@@ -210,7 +253,10 @@ The type for representing open variants of type <code class="code"><span class="
 
 <pre><span id="VALmu2"><span class="keyword">val</span> mu2</span> : <code class="type">('a <a href="Depyt.html#TYPEt">t</a> -> 'b <a href="Depyt.html#TYPEt">t</a> -> 'a <a href="Depyt.html#TYPEt">t</a> * 'b <a href="Depyt.html#TYPEt">t</a>) -><br>       'a <a href="Depyt.html#TYPEt">t</a> * 'b <a href="Depyt.html#TYPEt">t</a></code></pre><div class="info ">
 <code class="code">mu2 f</code> is the representations <code class="code">r</code> and <code class="code">s</code> such that <code class="code">r, s = mu2 r
-    s</code>. For instance:
+    s</code>.
+<p>
+
+    For instance:
 <p>
 
     <pre class="codepre"><code class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;r&nbsp;=&nbsp;{&nbsp;foo:&nbsp;int;&nbsp;bar:&nbsp;string&nbsp;list;&nbsp;z:&nbsp;z&nbsp;option&nbsp;}
@@ -235,7 +281,7 @@ The type for representing open variants of type <code class="code"><span class="
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;r,&nbsp;z&nbsp;=&nbsp;mu2&nbsp;(<span class="keyword">fun</span>&nbsp;r&nbsp;z&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;mkr&nbsp;z,&nbsp;mkz&nbsp;y)</code></pre><br>
 </div>
 <br>
-<h1 id="1_GenericOperations">Generic Operations</h1>
+<h1 id="generics">Generic Operations</h1>
 <p>
 
     Given a value <code class="code"><span class="keywordsign">'</span>a t</code>, it is possible to define generic operations
