@@ -69,8 +69,7 @@ val record: string -> 'b -> ('a, 'b, 'b) open_record
         record "t" (fun foo -> { foo })
         |+ field "foo" string (fun t -> t.foo)
         |+ field "bar" (list (pair int string)) (fun t -> t.bar)
-        |> sealr
-    ]}
+        |> sealr]}
 *)
 
 (** {1 Variants} *)
@@ -89,8 +88,7 @@ val case0: string -> 'a -> ('a, 'a case_p) case
     {[
       type t = Foo
 
-      let foo = case0 "Foo" Foo
-    ]}
+      let foo = case0 "Foo" Foo]}
 *)
 
 val case1: string -> 'b t -> ('b -> 'a) -> ('a, 'b -> 'a case_p) case
@@ -101,8 +99,7 @@ val case1: string -> 'b t -> ('b -> 'a) -> ('a, 'b -> 'a case_p) case
     {[
       type t = Foo of string
 
-      let foo = case1 "Foo" string (fun s -> Foo s)
-    ]}
+      let foo = case1 "Foo" string (fun s -> Foo s)]}
 *)
 
 type ('a, 'b, 'c) open_variant
@@ -129,9 +126,7 @@ val variant: string -> 'b -> ('a, 'b, 'b) open_variant
         variant "t" (fun foo bar -> function Foo -> foo | Bar s -> bar s)
         |~ case0 "Foo" Foo
         |~ case1 "Bar" string (fun x -> Bar x)
-        |> sealr
-    ]}
-
+        |> sealr]}
 *)
 
 val enum: string -> (string * 'a) list -> 'a t
@@ -141,8 +136,7 @@ val enum: string -> (string * 'a) list -> 'a t
     {[
       type t = Foo | Bar | Toto
 
-      let t = enum "t" ["Foo", Foo; "Bar", Bar; "Toto", Toto]
-    ]}
+      let t = enum "t" ["Foo", Foo; "Bar", Bar; "Toto", Toto]]}
 *)
 
 (** {1 Recursive definitions}
@@ -162,8 +156,7 @@ val mu: ('a t -> 'a t) -> 'a t
       let x = mu (fun x ->
           record "x" (fun x -> { x })
           |+ field "x" x (fun x -> x.x)
-          |> sealr)
-    ]}
+          |> sealr)]}
 *)
 
 val mu2: ('a t -> 'b t -> 'a t * 'b t) -> 'a t * 'b t
@@ -190,8 +183,7 @@ val mu2: ('a t -> 'b t -> 'a t * 'b t) -> 'a t * 'b t
         |> sealr
 
       (* Tie the loop. *)
-      let r, z = mu2 (fun r z -> mkr z, mkz y)
-    ]}
+      let r, z = mu2 (fun r z -> mkr z, mkz y)]}
 *)
 
 
