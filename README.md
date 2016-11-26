@@ -1,11 +1,11 @@
-Depyt — yet-an-other type combinator library
--------------------------------------------------------------------------------
-%%VERSION%%
+### Depyt — yet-an-other type combinator library
 
 Depyt is yet an-other type combinator library. It tries to expose a nice API
 to define records and variants. It also exposes higher-level combinators
 to easily generate equality functions, comparators, pretty-printer, parser
 and unparsers.
+
+#### Variants
 
 For instance, to define variants:
 
@@ -24,7 +24,12 @@ t = Foo
 
 # compare t Foo (Bar (Some "a"));;
 - : int = -1
+
+# compare t Foo (Bar (Some "a"));;
+- : int = -1
 ```
+
+#### Records
 
 To define records:
 
@@ -32,10 +37,15 @@ To define records:
 # open Depyt;;
 # type t = { foo: int; bar: string list };;
 # let t =
-    let foo = field "foo" int (fun t -> t.foo) in
-    let bar = field "bar" (list string) (fun t -> t.bar) in
-    record2 "r" foo bar @@ fun foo bar -> { foo; bar };;
+    record "r" (fun foo bar -> { foo; bar })
+    |+ field "foo" int (fun t -> t.foo)
+    |+ field "bar" (list string) (fun t -> t.bar)
+    |> seal
 va t : t Depyt.t = <abstr>
+
+# Fmt.pr "t = %a\n" (pp t) { foor = 3; bar = ["foo"] };;
+{ foo = 3; bar = ["foo"]; }
+- : unit = ()
 ```
 
 Depyt is distributed under the ISC license.
@@ -58,14 +68,3 @@ the source interfaces. It can be consulted [online][doc] or via
 `odig doc depyt`.
 
 [doc]: https://samoht.github.io/depyt/doc
-
-## Sample programs
-
-If you installed depyt with `opam` sample programs are located in
-the directory `opam config var depyt:doc`.
-
-In the distribution sample programs and tests are located in the
-[`test`](test) directory of the distribution. They can be built and run
-with:
-
-    topkg build --tests true && topkg test
