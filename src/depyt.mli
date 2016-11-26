@@ -109,7 +109,7 @@ type ('a, 'b, 'c) open_variant
 (** The type for representing open variants of type ['a] with pattern
     matching of type ['b]. ['c] represents the missing cases for the
     variant, e.g. initially variant hols [c' = 'b] and it can be
-    {{!sealed}sealv} when ['c = 'a].  *)
+    {{!sealv}sealed} when ['c = 'a].  *)
 
 val sealv: ('a, 'b, 'a -> 'a case_p) open_variant -> 'a t
 (** [sealv v] seals the open variant [v]. *)
