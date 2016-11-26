@@ -51,6 +51,8 @@ let e4 = Tata
 let neg t =
   Alcotest.testable (Alcotest.pp t) (fun x y -> not (Alcotest.equal t x y))
 
+let test t = Alcotest.testable (pp t) (equal t)
+
 let test_equal () =
   Alcotest.(check @@ test r) __LOC__ r1 r1;
   Alcotest.(check @@ test r) __LOC__ r2 r2;

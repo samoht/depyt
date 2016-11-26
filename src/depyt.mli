@@ -177,9 +177,6 @@ module Bin: Serializer
 (** JSON serializers. *)
 module Json: Serializer
 
-val test: 'a t -> 'a Alcotest.testable
-(** [test t] is a test check for values of type [t]. *)
-
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Thomas Gazagnaire
 

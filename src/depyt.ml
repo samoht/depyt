@@ -648,8 +648,6 @@ module type Serializer = sig
   val read: 'a t ->  buffer -> pos:int -> int * [`Ok of 'a | `Error of string]
 end
 
-let test t = Alcotest.testable (pp t) (equal t)
-
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Thomas Gazagnaire
 

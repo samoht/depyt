@@ -1,6 +1,6 @@
 description = "Yet-an-other type combinator library"
 version = "%%VERSION_NUM%%"
-requires = "cstruct fmt result alcotest"
+requires = "cstruct fmt result"
 archive(byte) = "depyt.cma"
 archive(native) = "depyt.cmxa"
 plugin(byte) = "depyt.cma"
