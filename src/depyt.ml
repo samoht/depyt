@@ -50,12 +50,17 @@ end
 *)
 
 type _ t =
+  | Self   : 'a self -> 'a t
   | Prim   : 'a prim -> 'a t
   | List   : 'a t -> 'a list t
   | Pair   : 'a t * 'b t -> ('a * 'b) t
   | Option : 'a t -> 'a option t
   | Record : 'a record -> 'a t
   | Variant: 'a variant -> 'a t
+
+and 'a self = {
+  mutable self: (unit -> 'a t);
+}
 
 and 'a prim =
   | Unit   : unit prim
@@ -146,6 +151,20 @@ let seal: type a b. (a, b, a) open_record -> a t =
     Record { rwit; rname; rfields = Fields (fs, c) }
 
 let (|+) = app
+
+let mu: type a. (a t -> a t) -> a t = fun f ->
+  let rec fake_x = { self = (fun () -> Self fake_x) } in
+  let real_x = f (Self fake_x) in
+  fake_x.self <- (fun () -> real_x);
+  real_x
+
+let mu2: type a b. (a t -> b t -> a t * b t) -> a t * b t = fun f ->
+  let rec fake_x = { self = (fun () -> Self fake_x) } in
+  let rec fake_y = { self = (fun () -> Self fake_y) } in
+  let real_x, real_y = f (Self fake_x) (Self fake_y) in
+  fake_x.self <- (fun () -> real_x);
+  fake_y.self <- (fun () -> real_y);
+  real_x, real_y
 
 (* variants *)
 
@@ -242,6 +261,7 @@ module Equal = struct
     | _ -> false
 
   let rec t: type a. a t -> a equal = function
+  | Self s     -> t (s.self ())
   | Prim p     -> prim p
   | List l     -> list (t l)
   | Pair (x,y) -> pair (t x) (t y)
@@ -314,6 +334,7 @@ module Compare = struct
     | Some x, Some y -> c x y
 
   let rec t: type a. a t -> a compare = function
+  | Self s     -> t (s.self ())
   | Prim p     -> prim p
   | List l     -> list (t l)
   | Pair (x,y) -> pair (t x) (t y)
@@ -368,6 +389,7 @@ module Pp = struct
   let option = Fmt.Dump.option
 
   let rec t: type a. a t -> a Fmt.t = function
+  | Self s     -> t (s.self ())
   | Prim t     -> prim t
   | List l     -> list (t l)
   | Pair (x,y) -> pair (t x) (t y)
@@ -423,6 +445,7 @@ module Bin = struct
     | Some x -> (int8 0) + o x
 
     let rec t: type a. a t -> a size_of = function
+    | Self s     -> t (s.self ())
     | Prim t     -> prim t
     | List l     -> list (t l)
     | Pair (x,y) -> pair (t x) (t y)
@@ -480,6 +503,7 @@ module Bin = struct
     | Some x -> bool buf ~pos true >>= fun pos -> o buf ~pos x
 
     let rec t: type a. a t -> a write = function
+    | Self s     -> t (s.self ())
     | Prim t     -> prim t
     | List l     -> list (t l)
     | Pair (x,y) -> pair (t x) (t y)
@@ -558,6 +582,7 @@ module Bin = struct
       | pos, _ -> o buf ~pos >|= fun x -> Some x
 
     let rec t: type a. a t -> a read = function
+    | Self s     -> t (s.self ())
     | Prim t     -> prim t
     | List l     -> list (t l)
     | Pair (x,y) -> pair (t x) (t y)

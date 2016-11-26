@@ -33,6 +33,12 @@ val option: 'a t -> 'a option t
 val pair: 'a t -> 'b t -> ('a * 'b) t
 (** [pair x y] is a representation of values of type [x * y]. *)
 
+val mu: ('a t -> 'a t) -> 'a t
+(** [mu f] is the representation [r] such that [r = mu r]. *)
+
+val mu2: ('a t -> 'b t -> 'a t * 'b t) -> 'a t * 'b t
+(** [mu2 f] is the representations [r] and [s] such that [r, s = mu2 r s]. *)
+
 (** {1 Records} *)
 
 type ('a, 'b) field

@@ -6,13 +6,25 @@
 
 open Depyt
 
-type my_r = { foo: int; bar: string list }
+type my_r = { foo: int; bar: string list; z: my_z option }
 
-let r =
-  record "r" (fun foo bar -> { foo; bar })
-  |+ field "foo" int (fun t -> t.foo)
-  |+ field "bar" (list string) (fun t -> t.bar)
-  |> seal
+and my_z = { x: int; r: my_r list }
+
+let r, z =
+  mu2 (fun r z ->
+      record "r" (fun foo bar z -> { foo; bar; z })
+      |+ field "foo" int (fun t -> t.foo)
+      |+ field "bar" (list string) (fun t -> t.bar)
+      |+ field "z" (option z) (fun t -> t.z)
+      |> seal,
+      record "z" (fun x r -> { x; r })
+      |+ field "x" int (fun t -> t.x)
+      |+ field "r" (list r) (fun t -> t.r)
+      |> seal
+    )
+
+let r1 = { foo = 3; bar = ["aaa";"b"]; z = None }
+let r2 = { foo = 3; bar = ["aaa";"c"]; z = Some { x = 2; r = [r1; r1] } }
 
 type my_v =
   | Foo
@@ -26,8 +38,6 @@ let v =
 type my_e = Fooe | Bars | Toto | Tata
 let e = enum "e" ["Fooe", Fooe; "Bars", Bars; "Toto", Toto; "Tata", Tata]
 
-let r1 = { foo = 3; bar = ["aaa";"b"] }
-let r2 = { foo = 3; bar = ["aaa";"c"] }
 let v1 = Foo
 let v2 = Bar 0
 let v3 = Bar 1
