@@ -14,6 +14,12 @@
 &nbsp;</div>
 <h1>Index of values</h1>
 <table>
+<tr><td align="left"><br></td></tr>
+<tr><td><a href="Depyt.html#VAL(|+)">(|+)</a> [<a href="Depyt.html">Depyt</a>]</td>
+<td><div class="info">
+<code class="code">r |+ f</code> adds the field <code class="code">f</code> to the open record <code class="code">r</code>.
+</div>
+</td></tr>
 <tr><td align="left"><br>C</td></tr>
 <tr><td><a href="Depyt.html#VALcase0">case0</a> [<a href="Depyt.html">Depyt</a>]</td>
 <td><div class="info">
@@ -86,39 +92,18 @@
 <code class="code">read t</code> reads a serialization of a value of type <code class="code">t</code>.
 </div>
 </td></tr>
-<tr><td><a href="Depyt.html#VALrecord1">record1</a> [<a href="Depyt.html">Depyt</a>]</td>
+<tr><td><a href="Depyt.html#VALrecord">record</a> [<a href="Depyt.html">Depyt</a>]</td>
 <td><div class="info">
-<code class="code">record1 n f mk</code> is the representation of the record called <code class="code">n</code> of
-    type <code class="code"><span class="keywordsign">'</span>a</code>, having only one field of type <code class="code"><span class="keywordsign">'</span>b</code> and with constructor
-    <code class="code">c</code>.
-</div>
-</td></tr>
-<tr><td><a href="Depyt.html#VALrecord2">record2</a> [<a href="Depyt.html">Depyt</a>]</td>
-<td><div class="info">
-Same as <a href="Depyt.html#VALrecord1"><code class="code"><span class="constructor">Depyt</span>.record1</code></a> but for records with 2 fields.
-</div>
-</td></tr>
-<tr><td><a href="Depyt.html#VALrecord3">record3</a> [<a href="Depyt.html">Depyt</a>]</td>
-<td><div class="info">
-Same as <a href="Depyt.html#VALrecord1"><code class="code"><span class="constructor">Depyt</span>.record1</code></a> but for records with 3 fields.
-</div>
-</td></tr>
-<tr><td><a href="Depyt.html#VALrecord4">record4</a> [<a href="Depyt.html">Depyt</a>]</td>
-<td><div class="info">
-Same as <a href="Depyt.html#VALrecord1"><code class="code"><span class="constructor">Depyt</span>.record1</code></a> but for records with 4 fields.
-</div>
-</td></tr>
-<tr><td><a href="Depyt.html#VALrecord5">record5</a> [<a href="Depyt.html">Depyt</a>]</td>
-<td><div class="info">
-Same as <a href="Depyt.html#VALrecord1"><code class="code"><span class="constructor">Depyt</span>.record1</code></a> but for records with 5 fields.
-</div>
-</td></tr>
-<tr><td><a href="Depyt.html#VALrecord6">record6</a> [<a href="Depyt.html">Depyt</a>]</td>
-<td><div class="info">
-Same as <a href="Depyt.html#VALrecord1"><code class="code"><span class="constructor">Depyt</span>.record1</code></a> but for records with 6 fields.
+<code class="code">record1 n f fs</code> is the representation of the record called <code class="code">n</code> of
+    type <code class="code"><span class="keywordsign">'</span>a</code> using <code class="code">f</code> as constructor and with the fields <code class="code">fs</code>.
 </div>
 </td></tr>
 <tr><td align="left"><br>S</td></tr>
+<tr><td><a href="Depyt.html#VALseal">seal</a> [<a href="Depyt.html">Depyt</a>]</td>
+<td><div class="info">
+<code class="code">seal r</code> seal the open record <code class="code">r</code>.
+</div>
+</td></tr>
 <tr><td><a href="Depyt.Serializer.html#VALsize_of">size_of</a> [<a href="Depyt.Serializer.html">Depyt.Serializer</a>]</td>
 <td><div class="info">
 <code class="code">size_of t</code> is the size needed to serialize values of type <code class="code">t</code>.
