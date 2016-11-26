@@ -26,7 +26,7 @@
 Yet-an-other type combinator library
 <p>
 
-    <em>ef10745 — <a href="https://github.com/samoht/depyt ">homepage</a></em><br>
+    <em>c423573 — <a href="https://github.com/samoht/depyt ">homepage</a></em><br>
 </div>
 <hr width="100%">
 <br>
@@ -109,8 +109,7 @@ The type for representing open records of type <code class="code"><span class="k
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;record&nbsp;<span class="string">"t"</span>&nbsp;(<span class="keyword">fun</span>&nbsp;foo&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;{&nbsp;foo&nbsp;})
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|+&nbsp;field&nbsp;<span class="string">"foo"</span>&nbsp;string&nbsp;(<span class="keyword">fun</span>&nbsp;t&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;t.foo)
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|+&nbsp;field&nbsp;<span class="string">"bar"</span>&nbsp;(list&nbsp;(pair&nbsp;int&nbsp;string))&nbsp;(<span class="keyword">fun</span>&nbsp;t&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;t.bar)
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&gt;&nbsp;sealr
-&nbsp;&nbsp;&nbsp;&nbsp;</code></pre><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&gt;&nbsp;sealr</code></pre><br>
 </div>
 <br>
 <h1 id="1_Variants">Variants</h1><br>
@@ -135,8 +134,7 @@ The type for representing patterns for a variant of type <code class="code"><spa
 
     <pre class="codepre"><code class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;t&nbsp;=&nbsp;<span class="constructor">Foo</span>
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;foo&nbsp;=&nbsp;case0&nbsp;<span class="string">"Foo"</span>&nbsp;<span class="constructor">Foo</span>
-&nbsp;&nbsp;&nbsp;&nbsp;</code></pre><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;foo&nbsp;=&nbsp;case0&nbsp;<span class="string">"Foo"</span>&nbsp;<span class="constructor">Foo</span></code></pre><br>
 </div>
 
 <pre><span id="VALcase1"><span class="keyword">val</span> case1</span> : <code class="type">string -> 'b <a href="Depyt.html#TYPEt">t</a> -> ('b -> 'a) -> ('a, 'b -> 'a <a href="Depyt.html#TYPEcase_p">case_p</a>) <a href="Depyt.html#TYPEcase">case</a></code></pre><div class="info ">
@@ -147,8 +145,7 @@ The type for representing patterns for a variant of type <code class="code"><spa
 
     <pre class="codepre"><code class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;t&nbsp;=&nbsp;<span class="constructor">Foo</span>&nbsp;<span class="keyword">of</span>&nbsp;string
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;foo&nbsp;=&nbsp;case1&nbsp;<span class="string">"Foo"</span>&nbsp;string&nbsp;(<span class="keyword">fun</span>&nbsp;s&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Foo</span>&nbsp;s)
-&nbsp;&nbsp;&nbsp;&nbsp;</code></pre><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;foo&nbsp;=&nbsp;case1&nbsp;<span class="string">"Foo"</span>&nbsp;string&nbsp;(<span class="keyword">fun</span>&nbsp;s&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Foo</span>&nbsp;s)</code></pre><br>
 </div>
 
 <pre><span id="TYPEopen_variant"><span class="keyword">type</span> <code class="type">('a, 'b, 'c)</code> open_variant</span> </pre>
@@ -179,8 +176,7 @@ The type for representing open variants of type <code class="code"><span class="
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;variant&nbsp;<span class="string">"t"</span>&nbsp;(<span class="keyword">fun</span>&nbsp;foo&nbsp;bar&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keyword">function</span>&nbsp;<span class="constructor">Foo</span>&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;foo&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Bar</span>&nbsp;s&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;bar&nbsp;s)
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|~&nbsp;case0&nbsp;<span class="string">"Foo"</span>&nbsp;<span class="constructor">Foo</span>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|~&nbsp;case1&nbsp;<span class="string">"Bar"</span>&nbsp;string&nbsp;(<span class="keyword">fun</span>&nbsp;x&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Bar</span>&nbsp;x)
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&gt;&nbsp;sealr
-&nbsp;&nbsp;&nbsp;&nbsp;</code></pre><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&gt;&nbsp;sealr</code></pre><br>
 </div>
 
 <pre><span id="VALenum"><span class="keyword">val</span> enum</span> : <code class="type">string -> (string * 'a) list -> 'a <a href="Depyt.html#TYPEt">t</a></code></pre><div class="info ">
@@ -190,8 +186,7 @@ The type for representing open variants of type <code class="code"><span class="
 
     <pre class="codepre"><code class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;t&nbsp;=&nbsp;<span class="constructor">Foo</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Bar</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Toto</span>
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;t&nbsp;=&nbsp;enum&nbsp;<span class="string">"t"</span>&nbsp;[<span class="string">"Foo"</span>,&nbsp;<span class="constructor">Foo</span>;&nbsp;<span class="string">"Bar"</span>,&nbsp;<span class="constructor">Bar</span>;&nbsp;<span class="string">"Toto"</span>,&nbsp;<span class="constructor">Toto</span>]
-&nbsp;&nbsp;&nbsp;&nbsp;</code></pre><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;t&nbsp;=&nbsp;enum&nbsp;<span class="string">"t"</span>&nbsp;[<span class="string">"Foo"</span>,&nbsp;<span class="constructor">Foo</span>;&nbsp;<span class="string">"Bar"</span>,&nbsp;<span class="constructor">Bar</span>;&nbsp;<span class="string">"Toto"</span>,&nbsp;<span class="constructor">Toto</span>]</code></pre><br>
 </div>
 <br>
 <h1 id="1_Recursivedefinitions">Recursive definitions</h1>
@@ -210,8 +205,7 @@ The type for representing open variants of type <code class="code"><span class="
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;x&nbsp;=&nbsp;mu&nbsp;(<span class="keyword">fun</span>&nbsp;x&nbsp;<span class="keywordsign">-&gt;</span>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;record&nbsp;<span class="string">"x"</span>&nbsp;(<span class="keyword">fun</span>&nbsp;x&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;{&nbsp;x&nbsp;})
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|+&nbsp;field&nbsp;<span class="string">"x"</span>&nbsp;x&nbsp;(<span class="keyword">fun</span>&nbsp;x&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;x.x)
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&gt;&nbsp;sealr)
-&nbsp;&nbsp;&nbsp;&nbsp;</code></pre><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&gt;&nbsp;sealr)</code></pre><br>
 </div>
 
 <pre><span id="VALmu2"><span class="keyword">val</span> mu2</span> : <code class="type">('a <a href="Depyt.html#TYPEt">t</a> -> 'b <a href="Depyt.html#TYPEt">t</a> -> 'a <a href="Depyt.html#TYPEt">t</a> * 'b <a href="Depyt.html#TYPEt">t</a>) -><br>       'a <a href="Depyt.html#TYPEt">t</a> * 'b <a href="Depyt.html#TYPEt">t</a></code></pre><div class="info ">
@@ -238,8 +232,7 @@ The type for representing open variants of type <code class="code"><span class="
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&gt;&nbsp;sealr
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">(*&nbsp;Tie&nbsp;the&nbsp;loop.&nbsp;*)</span>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;r,&nbsp;z&nbsp;=&nbsp;mu2&nbsp;(<span class="keyword">fun</span>&nbsp;r&nbsp;z&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;mkr&nbsp;z,&nbsp;mkz&nbsp;y)
-&nbsp;&nbsp;&nbsp;&nbsp;</code></pre><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;r,&nbsp;z&nbsp;=&nbsp;mu2&nbsp;(<span class="keyword">fun</span>&nbsp;r&nbsp;z&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;mkr&nbsp;z,&nbsp;mkz&nbsp;y)</code></pre><br>
 </div>
 <br>
 <h1 id="1_GenericOperations">Generic Operations</h1>
