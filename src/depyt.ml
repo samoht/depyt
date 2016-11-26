@@ -419,8 +419,8 @@ module Bin = struct
     let list l x = List.fold_left (fun acc x -> acc + l x) (int 0) x
     let pair a b (x, y) = a x + b y
     let option o = function
-    | None   -> int 0
-    | Some x -> (int 0) + o x
+    | None   -> int8 0
+    | Some x -> (int8 0) + o x
 
     let rec t: type a. a t -> a size_of = function
     | Prim t     -> prim t
