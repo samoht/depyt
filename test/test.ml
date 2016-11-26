@@ -6,9 +6,8 @@
 
 open Depyt
 
-type my_r = { foo: int; bar: string list; z: my_z option }
-
-and my_z = { x: int; r: my_r list }
+type r = { foo: int; bar: string list; z: z option }
+and z = { x: int; r: r list }
 
 let r, z =
   mu2 (fun r z ->
@@ -26,22 +25,42 @@ let r, z =
 let r1 = { foo = 3; bar = ["aaa";"b"]; z = None }
 let r2 = { foo = 3; bar = ["aaa";"c"]; z = Some { x = 2; r = [r1; r1] } }
 
-type my_v =
+type v =
   | Foo
   | Bar of int
+  | Yo of x * v option
 
-let v =
-  variant "v" (fun foo bar -> function Foo -> foo | Bar x -> bar x)
+and x = {
+  r: r;
+  i: (int * v) list;
+}
+
+let mkv v x =
+  variant "v" (fun foo bar toto -> function
+    | Foo         -> foo
+    | Bar x       -> bar x
+    | Yo (x, y) -> toto (x, y))
   |~ case0 "Foo" Foo
   |~ case1 "Bar" int (fun x -> Bar x)
+  |~ case1 "Yo" (pair x (option v)) (fun (x, y) -> Yo (x, y))
   |> sealv
 
-type my_e = Fooe | Bars | Toto | Tata
-let e = enum "e" ["Fooe", Fooe; "Bars", Bars; "Toto", Toto; "Tata", Tata]
+let mkx v =
+  record "x" (fun r i -> { r; i })
+  |+ field "r" r (fun x -> x.r)
+  |+ field "i" (list (pair int v)) (fun x -> x.i)
+  |> sealr
+
+let v, x = mu2 (fun v x -> mkv v x, mkx v)
 
 let v1 = Foo
 let v2 = Bar 0
-let v3 = Bar 1
+let v3 =
+  Yo ({ r = r2; i = [ (1, v1); (2, v2); (3, v2); (4, Bar 3); (5, Bar 6)] },
+      Some v2)
+
+type my_e = Fooe | Bars | Toto | Tata
+let e = enum "e" ["Fooe", Fooe; "Bars", Bars; "Toto", Toto; "Tata", Tata]
 
 let e1 = Fooe
 let e2 = Bars
