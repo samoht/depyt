@@ -25,7 +25,7 @@
 Yet-an-other type combinator library
 <p>
 
-    <em>87ebdee — <a href="https://github.com/samoht/depyt ">homepage</a></em><br>
+    <em>38e4a8e — <a href="https://github.com/samoht/depyt ">homepage</a></em><br>
 </div>
 <hr width="100%">
 <br>
@@ -73,7 +73,7 @@ The type for fields holding values of type <code class="code"><span class="keywo
 
 
 <pre><span id="VALfield"><span class="keyword">val</span> field</span> : <code class="type">string -> 'a <a href="Depyt.html#TYPEt">t</a> -> ('b -> 'a) -> ('b, 'a) <a href="Depyt.html#TYPEfield">field</a></code></pre><div class="info ">
-<code class="code">field1 n t g</code> is the representation of the field <code class="code">n</code> of type <code class="code">t</code>
+<code class="code">field n t g</code> is the representation of the field <code class="code">n</code> of type <code class="code">t</code>
     with getter <code class="code">g</code>.<br>
 </div>
 
@@ -95,18 +95,19 @@ The type for representing open records of type <code class="code"><span class="k
 </div>
 
 <pre><span id="VALrecord"><span class="keyword">val</span> record</span> : <code class="type">string -> 'b -> ('a, 'b, 'b) <a href="Depyt.html#TYPEopen_record">open_record</a></code></pre><div class="info ">
-<code class="code">record1 n f fs</code> is the representation of the record called <code class="code">n</code> of
+<code class="code">record n f fs</code> is the representation of the record called <code class="code">n</code> of
     type <code class="code"><span class="keywordsign">'</span>a</code> using <code class="code">f</code> as constructor and with the fields <code class="code">fs</code>.
 <p>
 
     For instance:
 <p>
 
-    <pre class="codepre"><code class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;t&nbsp;=&nbsp;{&nbsp;foo:&nbsp;string&nbsp;}
+    <pre class="codepre"><code class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;t&nbsp;=&nbsp;{&nbsp;foo:&nbsp;string;&nbsp;bar&nbsp;=&nbsp;(int&nbsp;*&nbsp;string)&nbsp;list;&nbsp;}
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;t&nbsp;=
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;record&nbsp;<span class="string">"t"</span>&nbsp;(<span class="keyword">fun</span>&nbsp;foo&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;{&nbsp;foo&nbsp;})
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|+&nbsp;field&nbsp;<span class="string">"foo"</span>&nbsp;string&nbsp;(<span class="keyword">fun</span>&nbsp;t&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;t.foo)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|+&nbsp;field&nbsp;<span class="string">"bar"</span>&nbsp;(list&nbsp;(pair&nbsp;int&nbsp;string))&nbsp;(<span class="keyword">fun</span>&nbsp;t&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;t.bar)
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&gt;&nbsp;seal
 &nbsp;&nbsp;&nbsp;&nbsp;</code></pre><br>
 </div>
