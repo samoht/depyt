@@ -31,9 +31,9 @@ end = struct
 
   let eq: type a b. a t -> b t -> (a, b) eq option =
     fun (module A) (module B) ->
-    match A.Eq with
-    | B.Eq -> Some Refl
-    | _    -> None
+      match A.Eq with
+      | B.Eq -> Some Refl
+      | _    -> None
 
 end
 
@@ -136,8 +136,8 @@ let record: string -> 'b -> ('a, 'b, 'b) open_record =
 let app: type a b c d.
   (a, b, c -> d) open_record -> (a, c) field -> (a, b, d) open_record
   = fun r f fs ->
-      let n, c, fs = r (F1 (f, fs)) in
-      n, c, fs
+    let n, c, fs = r (F1 (f, fs)) in
+    n, c, fs
 
 let seal: type a b. (a, b, a) open_record -> a t =
   fun r ->
@@ -242,17 +242,17 @@ module Equal = struct
     | _ -> false
 
   let rec t: type a. a t -> a equal = function
-    | Prim p     -> prim p
-    | List l     -> list (t l)
-    | Pair (x,y) -> pair (t x) (t y)
-    | Option x   -> option (t x)
-    | Record r   -> record r
-    | Variant v  -> variant v
+  | Prim p     -> prim p
+  | List l     -> list (t l)
+  | Pair (x,y) -> pair (t x) (t y)
+  | Option x   -> option (t x)
+  | Record r   -> record r
+  | Variant v  -> variant v
 
   and prim: type a. a prim -> a equal = function
-    | Unit   -> unit
-    | Int    -> int
-    | String -> string
+  | Unit   -> unit
+  | Int    -> int
+  | String -> string
 
   and record: type a. a record -> a equal = fun r x y ->
     List.for_all (function Field f -> field f x y) (fields r)
@@ -289,47 +289,47 @@ module Compare = struct
 
   let list c x y =
     if x == y then 0 else
-      let rec aux x y = match x, y with
-        | [], [] -> 0
-        | [], _  -> -1
-        | _ , [] -> 1
-        | xx::x,yy::y -> match c xx yy with
-          | 0 -> aux x y
-          | i -> i
-      in
-      aux x y
+    let rec aux x y = match x, y with
+    | [], [] -> 0
+    | [], _  -> -1
+    | _ , [] -> 1
+    | xx::x,yy::y -> match c xx yy with
+    | 0 -> aux x y
+    | i -> i
+    in
+    aux x y
 
   let pair cx cy (x1, y1 as a) (x2, y2 as b) =
     if a == b then 0 else
-      match cx x1 x2 with
-      | 0 -> cy y1 y2
-      | i -> i
+    match cx x1 x2 with
+    | 0 -> cy y1 y2
+    | i -> i
 
   let option c x y =
     if x == y then 0 else
-      match x, y with
-      | None  , None   -> 0
-      | Some _, None   -> 1
-      | None  , Some _ -> -1
-      | Some x, Some y -> c x y
+    match x, y with
+    | None  , None   -> 0
+    | Some _, None   -> 1
+    | None  , Some _ -> -1
+    | Some x, Some y -> c x y
 
   let rec t: type a. a t -> a compare = function
-    | Prim p     -> prim p
-    | List l     -> list (t l)
-    | Pair (x,y) -> pair (t x) (t y)
-    | Option x   -> option (t x)
-    | Record r   -> record r
-    | Variant v  -> variant v
+  | Prim p     -> prim p
+  | List l     -> list (t l)
+  | Pair (x,y) -> pair (t x) (t y)
+  | Option x   -> option (t x)
+  | Record r   -> record r
+  | Variant v  -> variant v
 
   and prim: type a. a prim -> a compare = function
-    | Unit   -> unit
-    | Int    -> int
-    | String -> string
+  | Unit   -> unit
+  | Int    -> int
+  | String -> string
 
   and record: type a. a record -> a compare = fun r x y ->
     let rec aux = function
-      | []           -> 0
-      | Field f :: t -> match field f x y with  0 -> aux t | i -> i
+    | []           -> 0
+    | Field f :: t -> match field f x y with  0 -> aux t | i -> i
     in
     aux (fields r)
 
@@ -368,17 +368,17 @@ module Pp = struct
   let option = Fmt.Dump.option
 
   let rec t: type a. a t -> a Fmt.t = function
-    | Prim t     -> prim t
-    | List l     -> list (t l)
-    | Pair (x,y) -> pair (t x) (t y)
-    | Option x   -> option (t x)
-    | Record r   -> record r
-    | Variant v  -> variant v
+  | Prim t     -> prim t
+  | List l     -> list (t l)
+  | Pair (x,y) -> pair (t x) (t y)
+  | Option x   -> option (t x)
+  | Record r   -> record r
+  | Variant v  -> variant v
 
   and prim: type a. a prim -> a Fmt.t = function
-    | Unit   -> unit
-    | Int    -> int
-    | String -> string
+  | Unit   -> unit
+  | Int    -> int
+  | String -> string
 
   and record: type a. a record -> a Fmt.t = fun r ppf x ->
     let fields = fields r in

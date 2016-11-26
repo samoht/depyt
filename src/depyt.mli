@@ -90,7 +90,7 @@ val case0: string -> 'a -> 'a case * 'a case_constr
 
       let foo = case0 "Foo" Foo
     ]}
-    *)
+*)
 
 val case1: string -> 'b t -> ('b -> 'a) -> 'a case * ('b -> 'a case_constr)
 (** [case1 n t c] is a representation of a variant case [n] with 1
@@ -118,7 +118,7 @@ val variant: string -> 'a case list -> ('a -> 'a case_constr) -> 'a t
         @@ function Foo -> mk_foo | Bar x -> mk_bar x
     ]}
 
-  *)
+*)
 
 val enum: string -> (string * 'a) list -> 'a t
 (** [enum n l] is a representation of the variant type which has
