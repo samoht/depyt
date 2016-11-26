@@ -33,12 +33,6 @@ val option: 'a t -> 'a option t
 val pair: 'a t -> 'b t -> ('a * 'b) t
 (** [pair x y] is a representation of values of type [x * y]. *)
 
-val mu: ('a t -> 'a t) -> 'a t
-(** [mu f] is the representation [r] such that [r = mu r]. *)
-
-val mu2: ('a t -> 'b t -> 'a t * 'b t) -> 'a t * 'b t
-(** [mu2 f] is the representations [r] and [s] such that [r, s = mu2 r s]. *)
-
 (** {1 Records} *)
 
 type ('a, 'b) field
@@ -53,7 +47,7 @@ type ('a, 'b, 'c) open_record
 (** The type for representing open records of type ['a] with
     constructors of type ['b]. ['c] represents the fields missings to
     the record, e.g. an open record initially holds ['c = 'b] and it
-    can can be {{!seal}sealed} when ['c = 'a]. *)
+    can can be {{!sealr}sealed} when ['c = 'a]. *)
 
 val sealr: ('a, 'b, 'a) open_record -> 'a t
 (** [sealr r] seal the open record [r]. *)
@@ -115,7 +109,7 @@ type ('a, 'b, 'c) open_variant
 (** The type for representing open variants of type ['a] with pattern
     matching of type ['b]. ['c] represents the missing cases for the
     variant, e.g. initially variant hols [c' = 'b] and it can be
-    {!{sealed}sealv} when ['c = 'a].  *)
+    {{!sealed}sealv} when ['c = 'a].  *)
 
 val sealv: ('a, 'b, 'a -> 'a case_p) open_variant -> 'a t
 (** [sealv v] seals the open variant [v]. *)
@@ -151,11 +145,61 @@ val enum: string -> (string * 'a) list -> 'a t
     ]}
 *)
 
-(** {1 Operations}
+(** {1 Recursive definitions}
 
-    Given a value ['a t], it is possible to define high-level
-    operations on value of type ['a] such as pretty-printing, parsing
-    and unparsing. We provide here few examples.
+    [Depyt] allows to create a limited form of recursive records and
+    variants. TODO: describe the limitations, e.g. only regular
+    recursion and no use of the generics inside the [mu*] functions.
+
+*)
+
+val mu: ('a t -> 'a t) -> 'a t
+(** [mu f] is the representation [r] such that [r = mu r]. For instance:
+
+    {[
+      type x = { x: x option }
+
+      let x = mu (fun x ->
+          record "x" (fun x -> { x })
+          |+ field "x" x (fun x -> x.x)
+          |> sealr)
+    ]}
+*)
+
+val mu2: ('a t -> 'b t -> 'a t * 'b t) -> 'a t * 'b t
+(** [mu2 f] is the representations [r] and [s] such that [r, s = mu2 r
+    s]. For instance:
+
+    {[
+      type r = { foo: int; bar: string list; z: z option }
+      and z = { x: int; r: r list }
+
+      (* Build the representation of [r] knowing [z]'s. *)
+      let mkr z =
+        record "r" (fun foo bar z -> { foo; bar; z })
+        |+ field "foo" int (fun t -> t.foo)
+        |+ field "bar" (list string) (fun t -> t.bar)
+        |+ field "z" (option z) (fun t -> t.z)
+        |> sealr
+
+      (* And the representation of [z] knowing [r]'s. *)
+      let mkz r =
+        record "z" (fun x r -> { x; r })
+        |+ field "x" int (fun t -> t.x)
+        |+ field "r" (list r) (fun t -> t.r)
+        |> sealr
+
+      (* Tie the loop. *)
+      let r, z = mu2 (fun r z -> mkr z, mkz y)
+    ]}
+*)
+
+
+(** {1 Generic Operations}
+
+    Given a value ['a t], it is possible to define generic operations
+    on value of type ['a] such as pretty-printing, parsing and
+    unparsing.
 *)
 
 val pp: 'a t -> 'a Fmt.t
