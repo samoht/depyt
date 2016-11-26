@@ -23,12 +23,13 @@ The type for buffers.
 <tr><td align="left"><br>C</td></tr>
 <tr><td><a href="Depyt.html#TYPEcase">case</a> [<a href="Depyt.html">Depyt</a>]</td>
 <td><div class="info">
-The type for representing variant cases of type <code class="code"><span class="keywordsign">'</span>a</code>.
+The type for representing variant cases of type <code class="code"><span class="keywordsign">'</span>a</code> with
+    patterns of type <code class="code"><span class="keywordsign">'</span>b</code>.
 </div>
 </td></tr>
-<tr><td><a href="Depyt.html#TYPEcase_constr">case_constr</a> [<a href="Depyt.html">Depyt</a>]</td>
+<tr><td><a href="Depyt.html#TYPEcase_p">case_p</a> [<a href="Depyt.html">Depyt</a>]</td>
 <td><div class="info">
-The type for representing case constructors for the type <code class="code"><span class="keywordsign">'</span>a</code>.
+The type for representing patterns for a variant of type <code class="code"><span class="keywordsign">'</span>a</code>.
 </div>
 </td></tr>
 <tr><td align="left"><br>F</td></tr>
@@ -42,7 +43,13 @@ The type for fields holding values of type <code class="code"><span class="keywo
 <tr><td><a href="Depyt.html#TYPEopen_record">open_record</a> [<a href="Depyt.html">Depyt</a>]</td>
 <td><div class="info">
 The type for representing open records of type <code class="code"><span class="keywordsign">'</span>a</code> with
-    constructors of type <code class="code"><span class="keywordsign">'</span>c</code>.
+    constructors of type <code class="code"><span class="keywordsign">'</span>b</code>.
+</div>
+</td></tr>
+<tr><td><a href="Depyt.html#TYPEopen_variant">open_variant</a> [<a href="Depyt.html">Depyt</a>]</td>
+<td><div class="info">
+The type for representing open variants of type <code class="code"><span class="keywordsign">'</span>a</code> with pattern
+    matching of type <code class="code"><span class="keywordsign">'</span>b</code>.
 </div>
 </td></tr>
 <tr><td align="left"><br>T</td></tr>

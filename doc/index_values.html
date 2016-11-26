@@ -20,17 +20,23 @@
 <code class="code">r |+ f</code> adds the field <code class="code">f</code> to the open record <code class="code">r</code>.
 </div>
 </td></tr>
+<tr><td><a href="Depyt.html#VAL(|~)">(|~)</a> [<a href="Depyt.html">Depyt</a>]</td>
+<td><div class="info">
+<code class="code">v |~ c</code> is <code class="code">v</code> augmented with the case <code class="code">c</code>.
+</div>
+</td></tr>
 <tr><td align="left"><br>C</td></tr>
 <tr><td><a href="Depyt.html#VALcase0">case0</a> [<a href="Depyt.html">Depyt</a>]</td>
 <td><div class="info">
 <code class="code">case0 n v</code> is a representation of a variant case <code class="code">n</code> with no
-    argument and a representation of its constructor.
+    argument and a singleton pattern.
 </div>
 </td></tr>
 <tr><td><a href="Depyt.html#VALcase1">case1</a> [<a href="Depyt.html">Depyt</a>]</td>
 <td><div class="info">
 <code class="code">case1 n t c</code> is a representation of a variant case <code class="code">n</code> with 1
-    argument of type <code class="code">t</code> and constructor <code class="code">c</code>.
+    argument of type <code class="code">t</code> and a pattern <code class="code">c</code> an function with one argument
+    of type <code class="code">t</code>.
 </div>
 </td></tr>
 <tr><td><a href="Depyt.html#VALcompare">compare</a> [<a href="Depyt.html">Depyt</a>]</td>
@@ -77,7 +83,8 @@
 </td></tr>
 <tr><td><a href="Depyt.html#VALmu2">mu2</a> [<a href="Depyt.html">Depyt</a>]</td>
 <td><div class="info">
-<code class="code">mu2 f</code> is the representations <code class="code">r</code> and <code class="code">s</code> such that <code class="code">r, s = mu2 r s</code>.
+<code class="code">mu2 f</code> is the representations <code class="code">r</code> and <code class="code">s</code> such that <code class="code">r, s = mu2 r
+    s</code>.
 </div>
 </td></tr>
 <tr><td align="left"><br>O</td></tr>
@@ -110,9 +117,14 @@
 </div>
 </td></tr>
 <tr><td align="left"><br>S</td></tr>
-<tr><td><a href="Depyt.html#VALseal">seal</a> [<a href="Depyt.html">Depyt</a>]</td>
+<tr><td><a href="Depyt.html#VALsealr">sealr</a> [<a href="Depyt.html">Depyt</a>]</td>
 <td><div class="info">
-<code class="code">seal r</code> seal the open record <code class="code">r</code>.
+<code class="code">sealr r</code> seal the open record <code class="code">r</code>.
+</div>
+</td></tr>
+<tr><td><a href="Depyt.html#VALsealv">sealv</a> [<a href="Depyt.html">Depyt</a>]</td>
+<td><div class="info">
+<code class="code">sealv v</code> seals the open variant <code class="code">v</code>.
 </div>
 </td></tr>
 <tr><td><a href="Depyt.Serializer.html#VALsize_of">size_of</a> [<a href="Depyt.Serializer.html">Depyt.Serializer</a>]</td>
@@ -133,7 +145,11 @@
 </td></tr>
 <tr><td align="left"><br>V</td></tr>
 <tr><td><a href="Depyt.html#VALvariant">variant</a> [<a href="Depyt.html">Depyt</a>]</td>
-<td></td></tr>
+<td><div class="info">
+<code class="code">variant n c p</code> is a representation of a variant type containing
+    the cases <code class="code">c</code> and using <code class="code">p</code> to deconstruct values.
+</div>
+</td></tr>
 <tr><td align="left"><br>W</td></tr>
 <tr><td><a href="Depyt.Serializer.html#VALwrite">write</a> [<a href="Depyt.Serializer.html">Depyt.Serializer</a>]</td>
 <td><div class="info">
