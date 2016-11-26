@@ -25,7 +25,7 @@
 Yet-an-other type combinator library
 <p>
 
-    <em>38e4a8e — <a href="https://github.com/samoht/depyt ">homepage</a></em><br>
+    <em>9209b1e — <a href="https://github.com/samoht/depyt ">homepage</a></em><br>
 </div>
 <hr width="100%">
 <br>
@@ -61,6 +61,14 @@ The type for runtime representation of values of type <code class="code"><span c
 
 <pre><span id="VALpair"><span class="keyword">val</span> pair</span> : <code class="type">'a <a href="Depyt.html#TYPEt">t</a> -> 'b <a href="Depyt.html#TYPEt">t</a> -> ('a * 'b) <a href="Depyt.html#TYPEt">t</a></code></pre><div class="info ">
 <code class="code">pair x y</code> is a representation of values of type <code class="code">x * y</code>.<br>
+</div>
+
+<pre><span id="VALmu"><span class="keyword">val</span> mu</span> : <code class="type">('a <a href="Depyt.html#TYPEt">t</a> -> 'a <a href="Depyt.html#TYPEt">t</a>) -> 'a <a href="Depyt.html#TYPEt">t</a></code></pre><div class="info ">
+<code class="code">mu f</code> is the representation <code class="code">r</code> such that <code class="code">r = mu r</code>.<br>
+</div>
+
+<pre><span id="VALmu2"><span class="keyword">val</span> mu2</span> : <code class="type">('a <a href="Depyt.html#TYPEt">t</a> -> 'b <a href="Depyt.html#TYPEt">t</a> -> 'a <a href="Depyt.html#TYPEt">t</a> * 'b <a href="Depyt.html#TYPEt">t</a>) -><br>       'a <a href="Depyt.html#TYPEt">t</a> * 'b <a href="Depyt.html#TYPEt">t</a></code></pre><div class="info ">
+<code class="code">mu2 f</code> is the representations <code class="code">r</code> and <code class="code">s</code> such that <code class="code">r, s = mu2 r s</code>.<br>
 </div>
 <br>
 <h1 id="1_Records">Records</h1><br>
@@ -208,9 +216,5 @@ Binary serializers.
 
 <pre><span class="keyword">module</span> <a href="Depyt.Json.html">Json</a>: <code class="type"><a href="Depyt.Serializer.html">Serializer</a></code><code class="type"> </code></pre><div class="info">
 JSON serializers.
-</div>
-
-<pre><span id="VALtest"><span class="keyword">val</span> test</span> : <code class="type">'a <a href="Depyt.html#TYPEt">t</a> -> 'a Alcotest.testable</code></pre><div class="info ">
-<code class="code">test t</code> is a test check for values of type <code class="code">t</code>.<br>
 </div>
 </body></html>
