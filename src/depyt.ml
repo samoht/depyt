@@ -47,7 +47,7 @@ type _ t =
   | Variant: 'a variant -> 'a t
 
 and 'a self = {
-  mutable self: (unit -> 'a t);
+  mutable self: 'a t;
 }
 
 and 'a prim =
@@ -115,17 +115,17 @@ let option a = Option a
 (* fix points *)
 
 let mu: type a. (a t -> a t) -> a t = fun f ->
-  let rec fake_x = { self = (fun () -> Self fake_x) } in
+  let rec fake_x = { self = Self fake_x } in
   let real_x = f (Self fake_x) in
-  fake_x.self <- (fun () -> real_x);
+  fake_x.self <- real_x;
   real_x
 
 let mu2: type a b. (a t -> b t -> a t * b t) -> a t * b t = fun f ->
-  let rec fake_x = { self = (fun () -> Self fake_x) } in
-  let rec fake_y = { self = (fun () -> Self fake_y) } in
+  let rec fake_x = { self = Self fake_x } in
+  let rec fake_y = { self =Self fake_y } in
   let real_x, real_y = f (Self fake_x) (Self fake_y) in
-  fake_x.self <- (fun () -> real_x);
-  fake_y.self <- (fun () -> real_y);
+  fake_x.self <- real_x;
+  fake_y.self <- real_y;
   real_x, real_y
 
 (* records *)
@@ -249,8 +249,10 @@ module Equal = struct
     | Some x, Some y -> e x y
     | _ -> false
 
+
+
   let rec t: type a. a t -> a equal = function
-  | Self s     -> t (s.self ())
+  | Self s     -> t s.self
   | Prim p     -> prim p
   | List l     -> list (t l)
   | Pair (x,y) -> pair (t x) (t y)
@@ -323,7 +325,7 @@ module Compare = struct
     | Some x, Some y -> c x y
 
   let rec t: type a. a t -> a compare = function
-  | Self s     -> t (s.self ())
+  | Self s     -> t s.self
   | Prim p     -> prim p
   | List l     -> list (t l)
   | Pair (x,y) -> pair (t x) (t y)
@@ -434,7 +436,7 @@ module Bin = struct
     | Some x -> (int8 0) + o x
 
     let rec t: type a. a t -> a size_of = function
-    | Self s     -> t (s.self ())
+    | Self s     -> t s.self
     | Prim t     -> prim t
     | List l     -> list (t l)
     | Pair (x,y) -> pair (t x) (t y)
@@ -492,7 +494,7 @@ module Bin = struct
     | Some x -> bool buf ~pos true >>= fun pos -> o buf ~pos x
 
     let rec t: type a. a t -> a write = function
-    | Self s     -> t (s.self ())
+    | Self s     -> t s.self
     | Prim t     -> prim t
     | List l     -> list (t l)
     | Pair (x,y) -> pair (t x) (t y)
@@ -571,7 +573,7 @@ module Bin = struct
       | pos, _ -> o buf ~pos >|= fun x -> Some x
 
     let rec t: type a. a t -> a read = function
-    | Self s     -> t (s.self ())
+    | Self s     -> t s.self
     | Prim t     -> prim t
     | List l     -> list (t l)
     | Pair (x,y) -> pair (t x) (t y)
