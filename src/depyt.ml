@@ -457,7 +457,9 @@ end
 
 let compare = Compare.t
 
-type buffer = Cstruct.t
+type buffer =
+  | C of Cstruct.t
+  | B of bytes
 
 type 'a size_of = 'a -> int
 type 'a write = buffer -> pos:int -> 'a -> int
@@ -513,23 +515,40 @@ module Size_of = struct
 
 end
 
+module B = EndianBytes.BigEndian
+
 module Write = struct
 
   let (>>=) = (|>)
 
   let unit _ ~pos () = pos
-  let int8 buf ~pos i = Cstruct.set_uint8 buf pos i; pos+1
-  let char buf ~pos c = Cstruct.set_char buf pos c; pos+1
-  let int32 buf ~pos i = Cstruct.BE.set_uint32 buf pos i; pos+4
-  let int64 buf ~pos i = Cstruct.BE.set_uint64 buf pos i; pos+8
+
+  let int8 buf ~pos i = match buf with
+  | C buf -> Cstruct.set_uint8 buf pos i; pos+1
+  | B buf -> B.set_int8 buf pos i; pos+1
+
+  let char buf ~pos c = match buf with
+  | C buf -> Cstruct.set_char buf pos c; pos+1
+  | B buf -> B.set_char buf pos c; pos+1
+
+  let int32 buf ~pos i = match buf with
+  | C buf -> Cstruct.BE.set_uint32 buf pos i; pos+4
+  | B buf -> B.set_int32 buf pos i; pos+4
+
+  let int64 buf ~pos i = match buf with
+  | C buf -> Cstruct.BE.set_uint64 buf pos i; pos+8
+  | B buf -> B.set_int64 buf pos i; pos+8
+
   let int buf ~pos i = int64 buf ~pos (Int64.of_int i)
   let float buf ~pos f = int64 buf ~pos (Int64.bits_of_float f)
 
   let string buf ~pos str =
     let len = String.length str in
     let pos = int buf ~pos len in
-    Cstruct.blit_from_string str 0 buf pos len;
-    pos+len
+    let () = match buf with
+    | C buf -> Cstruct.blit_from_string str 0 buf pos len
+    | B buf -> Bytes.blit_string str 0 buf pos len
+    in pos+len
 
   let list l buf ~pos x =
     let pos = int buf ~pos (List.length x) in
@@ -594,18 +613,34 @@ module Read = struct
   type 'a res = int * 'a
 
   let unit _ ~pos = ok pos ()
-  let int8 buf ~pos = ok (pos+1) (Cstruct.get_uint8 buf pos)
+
+  let int8 buf ~pos = match buf with
+  | C buf -> ok (pos+1) (Cstruct.get_uint8 buf pos)
+  | B buf -> ok (pos+1) (B.get_int8 buf pos)
+
+  let char buf ~pos = match buf with
+  | C buf -> ok (pos+1) (Cstruct.get_char buf pos)
+  | B buf -> ok (pos+1) (B.get_char buf pos)
+
+  let int32 buf ~pos = match buf with
+  | C buf -> ok (pos+4) (Cstruct.BE.get_uint32 buf pos)
+  | B buf -> ok (pos+4) (B.get_int32 buf pos)
+
+  let int64 buf ~pos = match buf with
+  | C buf -> ok (pos+8) (Cstruct.BE.get_uint64 buf pos)
+  | B buf -> ok (pos+8) (B.get_int64 buf pos)
+
   let bool buf ~pos = int8 buf ~pos >|= function 0 -> false | _ -> true
-  let char buf ~pos = ok (pos+1) (Cstruct.get_char buf pos)
-  let int32 buf ~pos = ok (pos+4) (Cstruct.BE.get_uint32 buf pos)
-  let int64 buf ~pos = ok (pos+8) (Cstruct.BE.get_uint64 buf pos)
   let int buf ~pos = int64 buf ~pos >|= Int64.to_int
   let float buf ~pos = int64 buf ~pos >|= Int64.float_of_bits
 
   let string buf ~pos =
     int buf ~pos >>= fun (pos, len) ->
     let str = Bytes.create len in
-    Cstruct.blit_to_string buf pos str 0 len;
+    let () = match buf with
+    | C buf -> Cstruct.blit_to_string buf pos str 0 len
+    | B buf -> Bytes.blit buf pos str 0 len
+    in
     ok (pos+len) (Bytes.unsafe_to_string str)
 
   let list l buf ~pos =

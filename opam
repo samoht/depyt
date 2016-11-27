@@ -12,7 +12,7 @@ depends: [
   "ocamlfind" {build}
   "ocamlbuild" {build}
   "topkg" {build}
-  "cstruct" "fmt" "result" "jsonm"
+  "cstruct" "fmt" "result" "jsonm" "ocplib-endian"
   "alcotest" {test}
 ]
 depopts: []

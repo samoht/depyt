@@ -259,8 +259,10 @@ val compare: 'a t -> 'a -> 'a -> int
 
 (** {2 Binary serialization} *)
 
-type buffer = Cstruct.t
 (** The type for buffers. *)
+type buffer =
+  | C of Cstruct.t
+  | B of bytes
 
 val size_of: 'a t -> 'a -> int
 (** [size_of t] is the size needed to serialize values of type [t]. *)
