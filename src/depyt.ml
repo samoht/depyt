@@ -677,8 +677,81 @@ let size_of = Size_of.t
 let read = Read.t
 let write = Write.t
 
-module Json = struct
+type 'a encode_json = Jsonm.encoder -> 'a -> unit
+
+module Encode_json = struct
+
+  let lexeme e l = ignore (Jsonm.encode e (`Lexeme l))
+
+  let unit e () = lexeme e `Null
+  let string e s = lexeme e (`String s)
+  let char e c = string e (String.make 1 c)
+  let float e f = lexeme e (`Float f)
+  let int32 e i = float e (Int32.to_float i)
+  let int64 e i = float e (Int64.to_float i)
+  let int e i = float e (float_of_int i)
+  let bool e = function false -> float e 0. | _ -> float e 1.
+
+  let list l e x =
+    lexeme e `As;
+    List.iter (l e) x;
+    lexeme e `Ae
+
+  let pair a b e (x, y) =
+    lexeme e `As;
+    a e x;
+    b e y;
+    lexeme e `Ae
+
+  let option o e = function
+  | None   -> lexeme e `Null
+  | Some x -> o e x
+
+  let rec t: type a. a t -> a encode_json = function
+  | Self s     -> t s.self
+  | Prim t     -> prim t
+  | List l     -> list (t l)
+  | Pair (x,y) -> pair (t x) (t y)
+  | Option x   -> option (t x)
+  | Record r   -> record r
+  | Variant v  -> variant v
+
+  and prim: type a. a prim -> a encode_json = function
+  | Unit   -> unit
+  | Bool   -> bool
+  | Char   -> char
+  | Int    -> int
+  | Int32  -> int32
+  | Int64  -> int64
+  | Float  -> float
+  | String -> string
+
+  and record: type a. a record -> a encode_json = fun r e x ->
+    let fields = fields r in
+    lexeme e `Os;
+    List.iter (fun (Field f) ->
+        match f.ftype, f.fget x with
+        | Option _, None   -> ()
+        | Option o, Some x -> lexeme e (`Name f.fname); t o e x
+        | tx      , x      -> lexeme e (`Name f.fname); t tx e x
+      ) fields;
+    lexeme e `Oe
+
+  and variant: type a. a variant -> a encode_json = fun v e x ->
+    case_v e (v.vget x)
+
+  and case_v: type a. a case_v encode_json = fun e c ->
+    match c with
+    | CV0 c     -> string e c.cname0
+    | CV1 (c,v) ->
+        lexeme e `Os;
+        lexeme e (`Name c.cname1);
+        t c.ctype1 e v;
+        lexeme e `Oe
+
 end
+
+let encode_json = Encode_json.t
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Thomas Gazagnaire

@@ -272,12 +272,11 @@ val write: 'a t -> buffer -> pos:int -> 'a -> int
 val read: 'a t ->  buffer -> pos:int -> int * 'a
 (** [read t] reads a serialization of a value of type [t]. *)
 
-end
+(** {2 JSON converters} *)
 
-(** JSON serializers. *)
-module Json: sig
-
-end
+val encode_json: 'a t -> Jsonm.encoder -> 'a -> unit
+(** [encode_json e t] encodes [t] into the
+    {{:jsonm}http://erratique.ch/software/jsonm}JSON} encoder [e]. *)
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Thomas Gazagnaire
