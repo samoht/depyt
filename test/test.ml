@@ -100,9 +100,9 @@ let test_compare () =
 
 let test_bin_write () =
   let check t x =
-    let len = Bin.size_of t x in
+    let len = size_of t x in
     let buf = Cstruct.create len in
-    let len'= Bin.write t buf ~pos:0 x in
+    let len'= write t buf ~pos:0 x in
     let msg = Fmt.strf "%a\n%s" (pp t) x in
     Alcotest.(check int) (msg __LOC__) len len'
   in
@@ -117,11 +117,11 @@ let test_bin_write () =
 
 let test_bin_read () =
   let check t x =
-    let len = Bin.size_of t x in
+    let len = size_of t x in
     let buf = Cstruct.create len in
-    let len' = Bin.write t buf ~pos:0 x in
+    let len' = write t buf ~pos:0 x in
     Alcotest.(check int) __LOC__ len len';
-    let len', y = Bin.read t buf ~pos:0 in
+    let len', y = read t buf ~pos:0 in
     Alcotest.(check int) __LOC__ len len';
     Alcotest.(check @@ test t) __LOC__ x y
   in

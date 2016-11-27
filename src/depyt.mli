@@ -260,18 +260,17 @@ val compare: 'a t -> 'a -> 'a -> int
 type buffer = Cstruct.t
 (** The type for buffers. *)
 
-(** Binary serialization. *)
-module Bin: sig
+(** {2 Binary serialization} *)
 
-  val size_of: 'a t -> 'a -> int
-  (** [size_of t] is the size needed to serialize values of type [t]. *)
+val size_of: 'a t -> 'a -> int
+(** [size_of t] is the size needed to serialize values of type [t]. *)
 
-  val write: 'a t -> buffer -> pos:int -> 'a -> int
-  (** [write t] serializes values of type [t]. Use [size_of] to
-      pre-determine the size of the buffer. *)
+val write: 'a t -> buffer -> pos:int -> 'a -> int
+(** [write t] serializes values of type [t]. Use [size_of] to
+    pre-determine the size of the buffer. *)
 
-  val read: 'a t ->  buffer -> pos:int -> int * 'a
-  (** [read t] reads a serialization of a value of type [t]. *)
+val read: 'a t ->  buffer -> pos:int -> int * 'a
+(** [read t] reads a serialization of a value of type [t]. *)
 
 end
 

@@ -463,223 +463,219 @@ type 'a size_of = 'a -> int
 type 'a write = buffer -> pos:int -> 'a -> int
 type 'a read = buffer -> pos:int -> int * 'a
 
-module Bin = struct
+module Size_of = struct
 
-  module Size_of = struct
+  let unit () = 0
+  let int8 (_:int) = 1
+  let char (_:char) = 1
+  let int (_:int) = 8 (* NOTE: to be portable, we consider int=int64 *)
+  let int32 (_:int32) = 4
+  let int64 (_:int64) = 8
+  let bool (_:bool) = 1
+  let float (_:float) = 8 (* NOTE: we consider 'double' here *)
+  let string s = (int 0) + String.length s
+  let list l x = List.fold_left (fun acc x -> acc + l x) (int 0) x
+  let pair a b (x, y) = a x + b y
+  let option o = function
+  | None   -> int8 0
+  | Some x -> (int8 0) + o x
 
-    let unit () = 0
-    let int8 (_:int) = 1
-    let char (_:char) = 1
-    let int (_:int) = 8 (* NOTE: to be portable, we consider int=int64 *)
-    let int32 (_:int32) = 4
-    let int64 (_:int64) = 8
-    let bool (_:bool) = 1
-    let float (_:float) = 8 (* NOTE: we consider 'double' here *)
-    let string s = (int 0) + String.length s
-    let list l x = List.fold_left (fun acc x -> acc + l x) (int 0) x
-    let pair a b (x, y) = a x + b y
-    let option o = function
-    | None   -> int8 0
-    | Some x -> (int8 0) + o x
+  let rec t: type a. a t -> a size_of = function
+  | Self s     -> t s.self
+  | Prim t     -> prim t
+  | List l     -> list (t l)
+  | Pair (x,y) -> pair (t x) (t y)
+  | Option x   -> option (t x)
+  | Record r   -> record r
+  | Variant v  -> variant v
 
-    let rec t: type a. a t -> a size_of = function
-    | Self s     -> t s.self
-    | Prim t     -> prim t
-    | List l     -> list (t l)
-    | Pair (x,y) -> pair (t x) (t y)
-    | Option x   -> option (t x)
-    | Record r   -> record r
-    | Variant v  -> variant v
+  and prim: type a. a prim -> a size_of = function
+  | Unit   -> unit
+  | Bool   -> bool
+  | Char   -> char
+  | Int    -> int
+  | Int32  -> int32
+  | Int64  -> int64
+  | Float  -> float
+  | String -> string
 
-    and prim: type a. a prim -> a size_of = function
-    | Unit   -> unit
-    | Bool   -> bool
-    | Char   -> char
-    | Int    -> int
-    | Int32  -> int32
-    | Int64  -> int64
-    | Float  -> float
-    | String -> string
+  and record: type a. a record -> a size_of = fun r x ->
+    let fields = fields r in
+    List.fold_left (fun acc (Field f) -> acc + field f x) 0 fields
 
-    and record: type a. a record -> a size_of = fun r x ->
-      let fields = fields r in
-      List.fold_left (fun acc (Field f) -> acc + field f x) 0 fields
+  and field: type a b. (a, b) field -> a size_of = fun f x ->
+    t f.ftype (f.fget x)
 
-    and field: type a b. (a, b) field -> a size_of = fun f x ->
-      t f.ftype (f.fget x)
-
-    and variant: type a. a variant -> a size_of = fun v x ->
-      match v.vget x with
-      | CV0 _       -> (int8 0)
-      | CV1 (x, vx) -> (int8 0) + t x.ctype1 vx
-
-  end
-
-  module Write = struct
-
-    let (>>=) = (|>)
-
-    let unit _ ~pos () = pos
-    let int8 buf ~pos i = Cstruct.set_uint8 buf pos i; pos+1
-    let char buf ~pos c = Cstruct.set_char buf pos c; pos+1
-    let int32 buf ~pos i = Cstruct.BE.set_uint32 buf pos i; pos+4
-    let int64 buf ~pos i = Cstruct.BE.set_uint64 buf pos i; pos+8
-    let int buf ~pos i = int64 buf ~pos (Int64.of_int i)
-    let float buf ~pos f = int64 buf ~pos (Int64.bits_of_float f)
-
-    let string buf ~pos str =
-      let len = String.length str in
-      let pos = int buf ~pos len in
-      Cstruct.blit_from_string str 0 buf pos len;
-      pos+len
-
-    let list l buf ~pos x =
-      let pos = int buf ~pos (List.length x) in
-      List.fold_left (fun pos i -> l buf ~pos i) pos x
-
-    let pair a b buf ~pos (x, y) =
-      a buf ~pos x >>= fun pos ->
-      b buf ~pos y
-
-    let bool buf ~pos = function
-    | false -> int8 buf ~pos 0
-    | true  -> int8 buf ~pos 1
-
-    let option o buf ~pos = function
-    | None   -> bool buf ~pos false
-    | Some x -> bool buf ~pos true >>= fun pos -> o buf ~pos x
-
-    let rec t: type a. a t -> a write = function
-    | Self s     -> t s.self
-    | Prim t     -> prim t
-    | List l     -> list (t l)
-    | Pair (x,y) -> pair (t x) (t y)
-    | Option x   -> option (t x)
-    | Record r   -> record r
-    | Variant v  -> variant v
-
-    and prim: type a. a prim -> a write = function
-    | Unit   -> unit
-    | Bool   -> bool
-    | Char   -> char
-    | Int    -> int
-    | Int32  -> int32
-    | Int64  -> int64
-    | Float  -> float
-    | String -> string
-
-    and record: type a. a record -> a write = fun r buf ~pos x ->
-      let fields = fields r in
-      List.fold_left (fun pos (Field f) -> field f buf ~pos x) pos fields
-
-    and field: type a b. (a, b) field -> a write = fun f buf ~pos x ->
-      t f.ftype buf ~pos (f.fget x)
-
-    and variant: type a. a variant -> a write = fun v buf ~pos x ->
-      case_v buf ~pos (v.vget x)
-
-    and case_v: type a. a case_v write = fun buf ~pos c ->
-      match c with
-      | CV0 c     -> int8 buf ~pos c.ctag0
-      | CV1 (c,v) ->
-          int8 buf ~pos c.ctag1 >>= fun pos ->
-          t c.ctype1 buf ~pos v
-
-  end
-
-  module Read = struct
-
-    let (>|=) (pos, x) f = pos, f x
-    let (>>=) (pos, x) f = f (pos, x)
-    let ok pos x  = (pos, x)
-
-    type 'a res = int * 'a
-
-    let unit _ ~pos = ok pos ()
-    let int8 buf ~pos = ok (pos+1) (Cstruct.get_uint8 buf pos)
-    let bool buf ~pos = int8 buf ~pos >|= function 0 -> false | _ -> true
-    let char buf ~pos = ok (pos+1) (Cstruct.get_char buf pos)
-    let int32 buf ~pos = ok (pos+4) (Cstruct.BE.get_uint32 buf pos)
-    let int64 buf ~pos = ok (pos+8) (Cstruct.BE.get_uint64 buf pos)
-    let int buf ~pos = int64 buf ~pos >|= Int64.to_int
-    let float buf ~pos = int64 buf ~pos >|= Int64.float_of_bits
-
-    let string buf ~pos =
-      int buf ~pos >>= fun (pos, len) ->
-      let str = Bytes.create len in
-      Cstruct.blit_to_string buf pos str 0 len;
-      ok (pos+len) (Bytes.unsafe_to_string str)
-
-    let list l buf ~pos =
-      int buf ~pos >>= fun (pos, len) ->
-      let rec aux acc ~pos = function
-      | 0 -> ok pos (List.rev acc)
-      | n ->
-          l buf ~pos >>= fun (pos, x) ->
-          aux (x :: acc) ~pos (n - 1)
-      in
-      aux [] ~pos len
-
-    let pair: type a b. a read -> b read -> (a * b) read = fun a b buf ~pos ->
-      a buf ~pos >>= fun (pos, a) ->
-      b buf ~pos >|= fun b ->
-      (a, b)
-
-    let option: type a. a read -> a option read = fun o buf ~pos ->
-      int8 buf ~pos >>= function
-      | pos, 0 -> ok pos None
-      | pos, _ -> o buf ~pos >|= fun x -> Some x
-
-    let rec t: type a. a t -> a read = function
-    | Self s     -> t s.self
-    | Prim t     -> prim t
-    | List l     -> list (t l)
-    | Pair (x,y) -> pair (t x) (t y)
-    | Option x   -> option (t x)
-    | Record r   -> record r
-    | Variant v  -> variant v
-
-    and prim: type a. a prim -> a read = function
-    | Unit   -> unit
-    | Bool   -> bool
-    | Char   -> char
-    | Int    -> int
-    | Int32  -> int32
-    | Int64  -> int64
-    | Float  -> float
-    | String -> string
-
-    and record: type a. a record -> a read = fun r buf ~pos ->
-      match r.rfields with
-      | Fields (fs, c) ->
-          let rec aux: type b. pos:int -> b -> (a, b) fields -> a res
-            = fun ~pos f -> function
-            | F0         -> ok pos f
-            | F1 (h, t) ->
-                field h buf ~pos >>= fun (pos, x) ->
-                aux ~pos (f x) t
-          in
-          aux ~pos c fs
-
-    and field: type a  b. (a, b) field -> b read = fun f -> t f.ftype
-
-    and variant: type a. a variant -> a read = fun v buf ~pos ->
-      (* FIXME: we support 'only' 256 variants *)
-      int8 buf ~pos >>= fun (pos, i) ->
-      case v.vcases.(i) buf ~pos
-
-    and case: type a. a a_case -> a read = fun c buf ~pos ->
-      match c with
-      | C0 c -> ok pos c.c0
-      | C1 c -> t c.ctype1 buf ~pos >|= c.c1
-
-  end
-
-  let size_of = Size_of.t
-  let read = Read.t
-  let write = Write.t
+  and variant: type a. a variant -> a size_of = fun v x ->
+    match v.vget x with
+    | CV0 _       -> (int8 0)
+    | CV1 (x, vx) -> (int8 0) + t x.ctype1 vx
 
 end
+
+module Write = struct
+
+  let (>>=) = (|>)
+
+  let unit _ ~pos () = pos
+  let int8 buf ~pos i = Cstruct.set_uint8 buf pos i; pos+1
+  let char buf ~pos c = Cstruct.set_char buf pos c; pos+1
+  let int32 buf ~pos i = Cstruct.BE.set_uint32 buf pos i; pos+4
+  let int64 buf ~pos i = Cstruct.BE.set_uint64 buf pos i; pos+8
+  let int buf ~pos i = int64 buf ~pos (Int64.of_int i)
+  let float buf ~pos f = int64 buf ~pos (Int64.bits_of_float f)
+
+  let string buf ~pos str =
+    let len = String.length str in
+    let pos = int buf ~pos len in
+    Cstruct.blit_from_string str 0 buf pos len;
+    pos+len
+
+  let list l buf ~pos x =
+    let pos = int buf ~pos (List.length x) in
+    List.fold_left (fun pos i -> l buf ~pos i) pos x
+
+  let pair a b buf ~pos (x, y) =
+    a buf ~pos x >>= fun pos ->
+    b buf ~pos y
+
+  let bool buf ~pos = function
+  | false -> int8 buf ~pos 0
+  | true  -> int8 buf ~pos 1
+
+  let option o buf ~pos = function
+  | None   -> bool buf ~pos false
+  | Some x -> bool buf ~pos true >>= fun pos -> o buf ~pos x
+
+  let rec t: type a. a t -> a write = function
+  | Self s     -> t s.self
+  | Prim t     -> prim t
+  | List l     -> list (t l)
+  | Pair (x,y) -> pair (t x) (t y)
+  | Option x   -> option (t x)
+  | Record r   -> record r
+  | Variant v  -> variant v
+
+  and prim: type a. a prim -> a write = function
+  | Unit   -> unit
+  | Bool   -> bool
+  | Char   -> char
+  | Int    -> int
+  | Int32  -> int32
+  | Int64  -> int64
+  | Float  -> float
+  | String -> string
+
+  and record: type a. a record -> a write = fun r buf ~pos x ->
+    let fields = fields r in
+    List.fold_left (fun pos (Field f) -> field f buf ~pos x) pos fields
+
+  and field: type a b. (a, b) field -> a write = fun f buf ~pos x ->
+    t f.ftype buf ~pos (f.fget x)
+
+  and variant: type a. a variant -> a write = fun v buf ~pos x ->
+    case_v buf ~pos (v.vget x)
+
+  and case_v: type a. a case_v write = fun buf ~pos c ->
+    match c with
+    | CV0 c     -> int8 buf ~pos c.ctag0
+    | CV1 (c,v) ->
+        int8 buf ~pos c.ctag1 >>= fun pos ->
+        t c.ctype1 buf ~pos v
+
+end
+
+module Read = struct
+
+  let (>|=) (pos, x) f = pos, f x
+  let (>>=) (pos, x) f = f (pos, x)
+  let ok pos x  = (pos, x)
+
+  type 'a res = int * 'a
+
+  let unit _ ~pos = ok pos ()
+  let int8 buf ~pos = ok (pos+1) (Cstruct.get_uint8 buf pos)
+  let bool buf ~pos = int8 buf ~pos >|= function 0 -> false | _ -> true
+  let char buf ~pos = ok (pos+1) (Cstruct.get_char buf pos)
+  let int32 buf ~pos = ok (pos+4) (Cstruct.BE.get_uint32 buf pos)
+  let int64 buf ~pos = ok (pos+8) (Cstruct.BE.get_uint64 buf pos)
+  let int buf ~pos = int64 buf ~pos >|= Int64.to_int
+  let float buf ~pos = int64 buf ~pos >|= Int64.float_of_bits
+
+  let string buf ~pos =
+    int buf ~pos >>= fun (pos, len) ->
+    let str = Bytes.create len in
+    Cstruct.blit_to_string buf pos str 0 len;
+    ok (pos+len) (Bytes.unsafe_to_string str)
+
+  let list l buf ~pos =
+    int buf ~pos >>= fun (pos, len) ->
+    let rec aux acc ~pos = function
+    | 0 -> ok pos (List.rev acc)
+    | n ->
+        l buf ~pos >>= fun (pos, x) ->
+        aux (x :: acc) ~pos (n - 1)
+    in
+    aux [] ~pos len
+
+  let pair: type a b. a read -> b read -> (a * b) read = fun a b buf ~pos ->
+    a buf ~pos >>= fun (pos, a) ->
+    b buf ~pos >|= fun b ->
+    (a, b)
+
+  let option: type a. a read -> a option read = fun o buf ~pos ->
+    int8 buf ~pos >>= function
+    | pos, 0 -> ok pos None
+    | pos, _ -> o buf ~pos >|= fun x -> Some x
+
+  let rec t: type a. a t -> a read = function
+  | Self s     -> t s.self
+  | Prim t     -> prim t
+  | List l     -> list (t l)
+  | Pair (x,y) -> pair (t x) (t y)
+  | Option x   -> option (t x)
+  | Record r   -> record r
+  | Variant v  -> variant v
+
+  and prim: type a. a prim -> a read = function
+  | Unit   -> unit
+  | Bool   -> bool
+  | Char   -> char
+  | Int    -> int
+  | Int32  -> int32
+  | Int64  -> int64
+  | Float  -> float
+  | String -> string
+
+  and record: type a. a record -> a read = fun r buf ~pos ->
+    match r.rfields with
+    | Fields (fs, c) ->
+        let rec aux: type b. pos:int -> b -> (a, b) fields -> a res
+          = fun ~pos f -> function
+          | F0         -> ok pos f
+          | F1 (h, t) ->
+              field h buf ~pos >>= fun (pos, x) ->
+              aux ~pos (f x) t
+        in
+        aux ~pos c fs
+
+  and field: type a  b. (a, b) field -> b read = fun f -> t f.ftype
+
+  and variant: type a. a variant -> a read = fun v buf ~pos ->
+    (* FIXME: we support 'only' 256 variants *)
+    int8 buf ~pos >>= fun (pos, i) ->
+    case v.vcases.(i) buf ~pos
+
+  and case: type a. a a_case -> a read = fun c buf ~pos ->
+    match c with
+    | C0 c -> ok pos c.c0
+    | C1 c -> t c.ctype1 buf ~pos >|= c.c1
+
+end
+
+let size_of = Size_of.t
+let read = Read.t
+let write = Write.t
 
 module Json = struct
 end
