@@ -123,9 +123,7 @@ let test_bin_read () =
     Alcotest.(check int) __LOC__ len len';
     let len', y = Bin.read t buf ~pos:0 in
     Alcotest.(check int) __LOC__ len len';
-    match y with
-    | `Ok y    -> Alcotest.(check @@ test t) __LOC__ x y
-    | `Error e -> Alcotest.fail (__LOC__ ^ "\n" ^ e)
+    Alcotest.(check @@ test t) __LOC__ x y
   in
   check r r1;
   check r r2;

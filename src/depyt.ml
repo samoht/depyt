@@ -421,7 +421,7 @@ type buffer = Cstruct.t
 
 type 'a size_of = 'a -> int
 type 'a write = buffer -> pos:int -> 'a -> int
-type 'a read = buffer -> pos:int -> int * [`Ok of 'a | `Error of string]
+type 'a read = buffer -> pos:int -> int * 'a
 
 module Bin = struct
 
@@ -530,34 +530,28 @@ module Bin = struct
 
   module Read = struct
 
-    let (>|=) (pos, x) f =
-      match x with
-      | `Ok x    -> pos, `Ok (f x)
-      | `Error e -> pos, `Error e
+    let (>|=) (pos, x) f = pos, f x
+    let (>>=) (pos, x) f = f (pos, x)
+    let ok pos x  = (pos, x)
 
-    let (>>=) (pos, x) f =
-      match x with
-      | `Ok x    -> f (pos, x)
-      | `Error e -> pos, `Error e
+    type 'a res = int * 'a
 
-    type 'a res = int * [`Ok of 'a | `Error of string]
-
-    let unit _ ~pos = pos, `Ok ()
-    let int8 buf ~pos = pos+1, `Ok (Cstruct.get_uint8 buf pos)
+    let unit _ ~pos = ok pos ()
+    let int8 buf ~pos = ok (pos+1) (Cstruct.get_uint8 buf pos)
 
     let int buf ~pos =
-      pos+8, `Ok (Int64.to_int @@ Cstruct.BE.get_uint64 buf pos)
+      ok (pos+8) (Int64.to_int @@ Cstruct.BE.get_uint64 buf pos)
 
     let string buf ~pos =
       int buf ~pos >>= fun (pos, len) ->
       let str = Bytes.create len in
       Cstruct.blit_to_string buf pos str 0 len;
-      pos+len, `Ok (Bytes.unsafe_to_string str)
+      ok (pos+len) (Bytes.unsafe_to_string str)
 
     let list l buf ~pos =
       int buf ~pos >>= fun (pos, len) ->
       let rec aux acc ~pos = function
-      | 0 -> pos, `Ok (List.rev acc)
+      | 0 -> ok pos (List.rev acc)
       | n ->
           l buf ~pos >>= fun (pos, x) ->
           aux (x :: acc) ~pos (n - 1)
@@ -571,7 +565,7 @@ module Bin = struct
 
     let option: type a. a read -> a option read = fun o buf ~pos ->
       int8 buf ~pos >>= function
-      | pos, 0 -> pos, `Ok None
+      | pos, 0 -> ok pos None
       | pos, _ -> o buf ~pos >|= fun x -> Some x
 
     let rec t: type a. a t -> a read = function
@@ -593,7 +587,7 @@ module Bin = struct
       | Fields (fs, c) ->
           let rec aux: type b. pos:int -> b -> (a, b) fields -> a res
             = fun ~pos f -> function
-            | F0         -> pos, `Ok f
+            | F0         -> ok pos f
             | F1 (h, t) ->
                 field h buf ~pos >>= fun (pos, x) ->
                 aux ~pos (f x) t
@@ -609,7 +603,7 @@ module Bin = struct
 
     and case: type a. a a_case -> a read = fun c buf ~pos ->
       match c with
-      | C0 c -> pos, `Ok c.c0
+      | C0 c -> ok pos c.c0
       | C1 c -> t c.ctype1 buf ~pos >|= c.c1
 
   end
@@ -638,7 +632,7 @@ end
 module type Serializer = sig
   val size_of: 'a t -> 'a -> int
   val write: 'a t -> buffer -> pos:int -> 'a -> int
-  val read: 'a t ->  buffer -> pos:int -> int * [`Ok of 'a | `Error of string]
+  val read: 'a t ->  buffer -> pos:int -> int *  'a
 end
 
 (*---------------------------------------------------------------------------

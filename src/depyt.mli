@@ -255,7 +255,7 @@ module type Serializer = sig
   (** [write t] serializes values of type [t]. Use [size_of] to
       pre-determine the size of the buffer. *)
 
-  val read: 'a t ->  buffer -> pos:int -> int * [`Ok of 'a | `Error of string]
+  val read: 'a t ->  buffer -> pos:int -> int * 'a
   (** [read t] reads a serialization of a value of type [t]. *)
 
 end
