@@ -88,6 +88,28 @@ let test_equal () =
   Alcotest.(check @@ neg @@ test e) __LOC__ e1 e2;
   Alcotest.(check @@ neg @@ test e) __LOC__ e1 e3
 
+let test_pp () =
+  Fmt.pr "PP: %a\n" (pp r) r1;
+  Fmt.pr "PP: %a\n" (pp r) r2;
+  Fmt.pr "PP: %a\n" (pp v) v1;
+  Fmt.pr "PP: %a\n" (pp v) v2;
+  Fmt.pr "PP: %a\n" (pp v) v3;
+  Fmt.pr "PP: %a\n" (pp e) e1;
+  Fmt.pr "PP: %a\n" (pp e) e2;
+  Fmt.pr "PP: %a\n" (pp e) e3;
+  Fmt.pr "PP: %a\n" (pp e) e4
+
+let test_pp_json () =
+  Fmt.pr "PP-JSON: %a\n" (pp_json r) r1;
+  Fmt.pr "PP-JSON: %a\n" (pp_json r) r2;
+  Fmt.pr "PP-JSON: %a\n" (pp_json v) v1;
+  Fmt.pr "PP-JSON: %a\n" (pp_json v) v2;
+  Fmt.pr "PP-JSON: %a\n" (pp_json v) v3;
+  Fmt.pr "PP-JSON: %a\n" (pp_json e) e1;
+  Fmt.pr "PP-JSON: %a\n" (pp_json e) e2;
+  Fmt.pr "PP-JSON: %a\n" (pp_json e) e3;
+  Fmt.pr "PP-JSON: %a\n" (pp_json e) e4
+
 let test_compare () =
   Alcotest.(check int) __LOC__ (compare r r1 r2) ~-1;
   Alcotest.(check int) __LOC__ (compare v v1 v2) ~-1;
@@ -137,6 +159,8 @@ let test_bin_read () =
 let () =
   Alcotest.run "depyt" [
     "basic", [
+      "pp"     , `Quick, test_pp;
+      "pp_json", `Quick, test_pp_json;
       "equal"  , `Quick, test_equal;
       "compare", `Quick, test_compare;
       "write"  , `Quick, test_bin_write;
