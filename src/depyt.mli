@@ -67,6 +67,10 @@ val option: 'a t -> 'a option t
 val pair: 'a t -> 'b t -> ('a * 'b) t
 (** [pair x y] is a representation of values of type [x * y]. *)
 
+val triple: 'a t -> 'b t -> 'c t -> ('a * 'b * 'c) t
+(** [triple x y z] is a representation of values of type [x * y *
+    z]. *)
+
 (** {1:records Records} *)
 
 type ('a, 'b) field

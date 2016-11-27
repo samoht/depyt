@@ -41,7 +41,7 @@ type _ t =
   | Self   : 'a self -> 'a t
   | Prim   : 'a prim -> 'a t
   | List   : 'a t -> 'a list t
-  | Pair   : 'a t * 'b t -> ('a * 'b) t
+  | Tuple  : 'a tuple -> 'a t
   | Option : 'a t -> 'a option t
   | Record : 'a record -> 'a t
   | Variant: 'a variant -> 'a t
@@ -59,6 +59,10 @@ and 'a prim =
   | Int64  : int64 prim
   | Float  : float prim
   | String : string prim
+
+and 'a tuple =
+  | Pair   : 'a t * 'b t -> ('a * 'b) tuple
+  | Triple : 'a t * 'b t * 'c t -> ('a * 'b * 'c) tuple
 
 and 'a record = {
   rwit   : 'a Witness.t;
@@ -119,7 +123,8 @@ let float = Prim Float
 let string = Prim String
 
 let list l = List l
-let pair a b = Pair (a, b)
+let pair a b = Tuple (Pair (a, b))
+let triple a b c = Tuple (Triple (a, b, c))
 let option a = Option a
 
 (* fix points *)
@@ -227,16 +232,24 @@ module Refl = struct
     | Prim a, Prim b -> prim a b
     | List a, List b ->
         (match eq a b with Some Refl -> Some Refl | None -> None)
+    | Tuple a, Tuple b -> tuple a b
     | Option a, Option b ->
         (match eq a b with Some Refl -> Some Refl | None -> None)
-    | Pair (a0, a1), Pair (b0, b1) ->
-        (match eq a0 b0, eq a1 b1 with
-        | Some Refl, Some Refl -> Some Refl
-        | None, _ | _, None -> None)
     | Record a, Record b   -> Witness.eq a.rwit b.rwit
     | Variant a, Variant b -> Witness.eq a.vwit b.vwit
     | _ -> None
 
+  and tuple: type a b. a tuple -> b tuple -> (a, b) eq option = fun a b ->
+    match a, b with
+    | Pair (a0, a1), Pair (b0, b1) ->
+        (match eq a0 b0, eq a1 b1 with
+        | Some Refl, Some Refl -> Some Refl
+        | _ -> None)
+    | Triple (a0, a1, a2), Triple (b0, b1, b2) ->
+        (match eq a0 b0, eq a1 b1, eq a2 b2 with
+        | Some Refl, Some Refl, Some Refl -> Some Refl
+        | _ -> None)
+    | _ -> None
 
 end
 
@@ -252,16 +265,21 @@ module Pp = struct
   let string ppf x = Fmt.pf ppf "%S" x
   let list = Fmt.Dump.list
   let pair = Fmt.Dump.pair
+  let triple a b c ppf (x, y, z) = Fmt.pf ppf "(%a, %a, %a)" a x b y c z
   let option = Fmt.Dump.option
 
   let rec t: type a. a t -> a Fmt.t = function
-  | Self s     -> t s.self
-  | Prim t     -> prim t
-  | List l     -> list (t l)
-  | Pair (x,y) -> pair (t x) (t y)
-  | Option x   -> option (t x)
-  | Record r   -> record r
-  | Variant v  -> variant v
+  | Self s    -> t s.self
+  | Prim t    -> prim t
+  | List l    -> list (t l)
+  | Tuple t   -> tuple t
+  | Option x  -> option (t x)
+  | Record r  -> record r
+  | Variant v -> variant v
+
+  and tuple: type a. a tuple -> a Fmt.t = function
+  | Pair (x,y)     -> pair (t x) (t y)
+  | Triple (x,y,z) -> triple (t x) (t y) (t z)
 
   and prim: type a. a prim -> a Fmt.t = function
   | Unit   -> unit
@@ -308,13 +326,16 @@ module Equal = struct
   let string x y = x == y || String.compare x y = 0
 
   (* NOTE: equality is ill-defined on float *)
-let float (x:float) (y:float) =  x = y
+  let float (x:float) (y:float) =  x = y
 
   let list e x y =
     x == y || (List.length x = List.length y && List.for_all2 e x y)
 
   let pair ex ey (x1, y1 as a) (x2, y2 as b) =
     a == b || (ex x1 x2 && ey y1 y2)
+
+  let triple ex ey ez (x1, y1, z1 as a) (x2, y2, z2 as b) =
+    a == b || (ex x1 x2 && ey y1 y2 && ez z1 z2)
 
   let option e x y =
     x == y ||
@@ -324,13 +345,17 @@ let float (x:float) (y:float) =  x = y
     | _ -> false
 
   let rec t: type a. a t -> a equal = function
-  | Self s     -> t s.self
-  | Prim p     -> prim p
-  | List l     -> list (t l)
-  | Pair (x,y) -> pair (t x) (t y)
-  | Option x   -> option (t x)
-  | Record r   -> record r
-  | Variant v  -> variant v
+  | Self s    -> t s.self
+  | Prim p    -> prim p
+  | List l    -> list (t l)
+  | Tuple t   -> tuple t
+  | Option x  -> option (t x)
+  | Record r  -> record r
+  | Variant v -> variant v
+
+  and tuple: type a. a tuple -> a equal = function
+  | Pair (a, b)      -> pair (t a) (t b)
+  | Triple (a, b, c) -> triple (t a) (t b) (t c)
 
   and prim: type a. a prim -> a equal = function
   | Unit   -> unit
@@ -398,6 +423,12 @@ module Compare = struct
     | 0 -> cy y1 y2
     | i -> i
 
+  let triple cx cy cz (x1, y1, z1 as a) (x2, y2, z2 as b) =
+    if a == b then 0 else
+    match cx x1 x2 with
+    | 0 -> pair cy cz (y1, z1) (y2, z2)
+    | i -> i
+
   let option c x y =
     if x == y then 0 else
     match x, y with
@@ -407,13 +438,17 @@ module Compare = struct
     | Some x, Some y -> c x y
 
   let rec t: type a. a t -> a compare = function
-  | Self s     -> t s.self
-  | Prim p     -> prim p
-  | List l     -> list (t l)
-  | Pair (x,y) -> pair (t x) (t y)
-  | Option x   -> option (t x)
-  | Record r   -> record r
-  | Variant v  -> variant v
+  | Self s    -> t s.self
+  | Prim p    -> prim p
+  | List l    -> list (t l)
+  | Tuple t   -> tuple t
+  | Option x  -> option (t x)
+  | Record r  -> record r
+  | Variant v -> variant v
+
+  and tuple: type a. a tuple -> a compare = function
+  | Pair (x,y)     -> pair (t x) (t y)
+  | Triple (x,y,z) -> triple (t x) (t y) (t z)
 
   and prim: type a. a prim -> a compare = function
   | Unit   -> unit
@@ -478,18 +513,23 @@ module Size_of = struct
   let string s = (int 0) + String.length s
   let list l x = List.fold_left (fun acc x -> acc + l x) (int 0) x
   let pair a b (x, y) = a x + b y
+  let triple a b c (x, y, z) = a x + b y + c z
   let option o = function
   | None   -> int8 0
   | Some x -> (int8 0) + o x
 
   let rec t: type a. a t -> a size_of = function
-  | Self s     -> t s.self
-  | Prim t     -> prim t
-  | List l     -> list (t l)
-  | Pair (x,y) -> pair (t x) (t y)
-  | Option x   -> option (t x)
-  | Record r   -> record r
-  | Variant v  -> variant v
+  | Self s    -> t s.self
+  | Prim t    -> prim t
+  | List l    -> list (t l)
+  | Tuple t   -> tuple t
+  | Option x  -> option (t x)
+  | Record r  -> record r
+  | Variant v -> variant v
+
+  and tuple: type a. a tuple -> a size_of = function
+  | Pair (x,y)     -> pair (t x) (t y)
+  | Triple (x,y,z) -> triple (t x) (t y) (t z)
 
   and prim: type a. a prim -> a size_of = function
   | Unit   -> unit
@@ -558,6 +598,10 @@ module Write = struct
     a buf ~pos x >>= fun pos ->
     b buf ~pos y
 
+  let triple a b c buf ~pos (x, y, z) =
+    a buf ~pos x >>= fun pos ->
+    pair b c buf ~pos (y, z)
+
   let bool buf ~pos = function
   | false -> int8 buf ~pos 0
   | true  -> int8 buf ~pos 1
@@ -567,13 +611,17 @@ module Write = struct
   | Some x -> bool buf ~pos true >>= fun pos -> o buf ~pos x
 
   let rec t: type a. a t -> a write = function
-  | Self s     -> t s.self
-  | Prim t     -> prim t
-  | List l     -> list (t l)
-  | Pair (x,y) -> pair (t x) (t y)
-  | Option x   -> option (t x)
-  | Record r   -> record r
-  | Variant v  -> variant v
+  | Self s    -> t s.self
+  | Prim t    -> prim t
+  | List l    -> list (t l)
+  | Tuple t   -> tuple t
+  | Option x  -> option (t x)
+  | Record r  -> record r
+  | Variant v -> variant v
+
+  and tuple: type a. a tuple -> a write = function
+  | Pair (x,y)     -> pair (t x) (t y)
+  | Triple (x,y,z) -> triple (t x) (t y) (t z)
 
   and prim: type a. a prim -> a write = function
   | Unit   -> unit
@@ -653,10 +701,16 @@ module Read = struct
     in
     aux [] ~pos len
 
-  let pair: type a b. a read -> b read -> (a * b) read = fun a b buf ~pos ->
+  let pair a b buf ~pos =
     a buf ~pos >>= fun (pos, a) ->
     b buf ~pos >|= fun b ->
     (a, b)
+
+  let triple a b c buf ~pos =
+    a buf ~pos >>= fun (pos, a) ->
+    b buf ~pos >>= fun (pos, b) ->
+    c buf ~pos >|= fun c ->
+    (a, b, c)
 
   let option: type a. a read -> a option read = fun o buf ~pos ->
     int8 buf ~pos >>= function
@@ -664,13 +718,17 @@ module Read = struct
     | pos, _ -> o buf ~pos >|= fun x -> Some x
 
   let rec t: type a. a t -> a read = function
-  | Self s     -> t s.self
-  | Prim t     -> prim t
-  | List l     -> list (t l)
-  | Pair (x,y) -> pair (t x) (t y)
-  | Option x   -> option (t x)
-  | Record r   -> record r
-  | Variant v  -> variant v
+  | Self s    -> t s.self
+  | Prim t    -> prim t
+  | List l    -> list (t l)
+  | Tuple t   -> tuple t
+  | Option x  -> option (t x)
+  | Record r  -> record r
+  | Variant v -> variant v
+
+  and tuple: type a. a tuple -> a read = function
+  | Pair (x,y)     -> pair (t x) (t y)
+  | Triple (x,y,z) -> triple (t x) (t y) (t z)
 
   and prim: type a. a prim -> a read = function
   | Unit   -> unit
@@ -738,18 +796,29 @@ module Encode_json = struct
     b e y;
     lexeme e `Ae
 
+  let triple a b c e (x, y, z) =
+    lexeme e `As;
+    a e x;
+    b e y;
+    c e z;
+    lexeme e `Ae
+
   let option o e = function
   | None   -> lexeme e `Null
   | Some x -> o e x
 
   let rec t: type a. a t -> a encode_json = function
-  | Self s     -> t s.self
-  | Prim t     -> prim t
-  | List l     -> list (t l)
-  | Pair (x,y) -> pair (t x) (t y)
-  | Option x   -> option (t x)
-  | Record r   -> record r
-  | Variant v  -> variant v
+  | Self s    -> t s.self
+  | Prim t    -> prim t
+  | List l    -> list (t l)
+  | Tuple t   -> tuple t
+  | Option x  -> option (t x)
+  | Record r  -> record r
+  | Variant v -> variant v
+
+  and tuple: type a. a tuple -> a encode_json = function
+  | Pair (x,y)     -> pair (t x) (t y)
+  | Triple (x,y,z) -> triple (t x) (t y) (t z)
 
   and prim: type a. a prim -> a encode_json = function
   | Unit   -> unit
@@ -913,6 +982,14 @@ module Decode_json = struct
     expect_lexeme e `Ae >|= fun () ->
     x, y
 
+  let triple a b c e =
+    expect_lexeme e `As >>= fun () ->
+    a e >>= fun x ->
+    b e >>= fun y ->
+    c e >>= fun z ->
+    expect_lexeme e `Ae >|= fun () ->
+    x, y, z
+
   let option o e =
     lexeme e >>= function
     | `Null -> Ok None
@@ -921,13 +998,17 @@ module Decode_json = struct
         o e >|= fun v -> Some v
 
   let rec t: type a. a t -> a decode = function
-  | Self s     -> t s.self
-  | Prim t     -> prim t
-  | List l     -> list (t l)
-  | Pair (x,y) -> pair (t x) (t y)
-  | Option x   -> option (t x)
-  | Record r   -> record r
-  | Variant v  -> variant v
+  | Self s    -> t s.self
+  | Prim t    -> prim t
+  | List l    -> list (t l)
+  | Tuple t   -> tuple t
+  | Option x  -> option (t x)
+  | Record r  -> record r
+  | Variant v -> variant v
+
+  and tuple: type a. a tuple -> a decode = function
+  | Pair (x,y)     -> pair (t x) (t y)
+  | Triple (x,y,z) -> triple (t x) (t y) (t z)
 
   and prim: type a. a prim -> a decode = function
   | Unit   -> unit
