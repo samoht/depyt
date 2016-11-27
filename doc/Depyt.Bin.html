@@ -9,7 +9,6 @@
 <link title="Index of types" rel=Appendix href="index_types.html">
 <link title="Index of values" rel=Appendix href="index_values.html">
 <link title="Index of modules" rel=Appendix href="index_modules.html">
-<link title="Index of module types" rel=Appendix href="index_module_types.html">
 <link title="Depyt" rel="Chapter" href="Depyt.html"><title>Depyt.Bin</title>
 </head>
 <body>
@@ -18,8 +17,8 @@
 </div>
 <h1>Module <a href="type_Depyt.Bin.html">Depyt.Bin</a></h1>
 
-<pre><span class="keyword">module</span> Bin: <code class="type"><a href="Depyt.Serializer.html">Serializer</a></code><code class="type"> </code></pre><div class="info module top">
-Binary serializers.<br>
+<pre><span class="keyword">module</span> Bin: <code class="code"><span class="keyword">sig</span></code> <a href="Depyt.Bin.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
+Binary serialization.<br>
 </div>
 <hr width="100%">
 
@@ -32,7 +31,7 @@ Binary serializers.<br>
       pre-determine the size of the buffer.<br>
 </div>
 
-<pre><span id="VALread"><span class="keyword">val</span> read</span> : <code class="type">'a <a href="Depyt.html#TYPEt">Depyt.t</a> -><br>       <a href="Depyt.html#TYPEbuffer">Depyt.buffer</a> -> pos:int -> int * [ `Error of string | `Ok of 'a ]</code></pre><div class="info ">
+<pre><span id="VALread"><span class="keyword">val</span> read</span> : <code class="type">'a <a href="Depyt.html#TYPEt">Depyt.t</a> -> <a href="Depyt.html#TYPEbuffer">Depyt.buffer</a> -> pos:int -> int * 'a</code></pre><div class="info ">
 <code class="code">read t</code> reads a serialization of a value of type <code class="code">t</code>.<br>
 </div>
 </body></html>

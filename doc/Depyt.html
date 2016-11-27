@@ -8,7 +8,6 @@
 <link title="Index of types" rel=Appendix href="index_types.html">
 <link title="Index of values" rel=Appendix href="index_values.html">
 <link title="Index of modules" rel=Appendix href="index_modules.html">
-<link title="Index of module types" rel=Appendix href="index_module_types.html">
 <link title="Depyt" rel="Chapter" href="Depyt.html"><link title="Depyt" rel="Section" href="#1_Depyt">
 <link title="Primitives" rel="Section" href="#primitives">
 <link title="Records" rel="Section" href="#records">
@@ -48,7 +47,7 @@ Yet-an-other type combinator library
     and converting between intermediate formats.
 <p>
 
-    <em>621610e — <a href="https://github.com/samoht/depyt ">homepage</a></em><br>
+    <em>e904ec5 — <a href="https://github.com/samoht/depyt ">homepage</a></em><br>
 </div>
 <hr width="100%">
 <br>
@@ -66,8 +65,28 @@ The type for runtime representation of values of type <code class="code"><span c
 <code class="code">unit</code> is a representation of the unit type.<br>
 </div>
 
+<pre><span id="VALbool"><span class="keyword">val</span> bool</span> : <code class="type">bool <a href="Depyt.html#TYPEt">t</a></code></pre><div class="info ">
+<code class="code">bool</code> is a representation of the boolean type.<br>
+</div>
+
+<pre><span id="VALchar"><span class="keyword">val</span> char</span> : <code class="type">char <a href="Depyt.html#TYPEt">t</a></code></pre><div class="info ">
+<code class="code">char</code> is a representation of the character type.<br>
+</div>
+
 <pre><span id="VALint"><span class="keyword">val</span> int</span> : <code class="type">int <a href="Depyt.html#TYPEt">t</a></code></pre><div class="info ">
 <code class="code">int</code> is a representation of the integer type.<br>
+</div>
+
+<pre><span id="VALint32"><span class="keyword">val</span> int32</span> : <code class="type">int32 <a href="Depyt.html#TYPEt">t</a></code></pre><div class="info ">
+<code class="code">int32</code> is a representation of the 32-bit integers type.<br>
+</div>
+
+<pre><span id="VALint64"><span class="keyword">val</span> int64</span> : <code class="type">int64 <a href="Depyt.html#TYPEt">t</a></code></pre><div class="info ">
+<code class="code">int64</code> is a representation of the 64-bit integer type.<br>
+</div>
+
+<pre><span id="VALfloat"><span class="keyword">val</span> float</span> : <code class="type">float <a href="Depyt.html#TYPEt">t</a></code></pre><div class="info ">
+<code class="code">float</code> is a representation of the float type.<br>
 </div>
 
 <pre><span id="VALstring"><span class="keyword">val</span> string</span> : <code class="type">string <a href="Depyt.html#TYPEt">t</a></code></pre><div class="info ">
@@ -306,15 +325,11 @@ The type for buffers.<br>
 </div>
 
 
-<pre><span class="keyword">module type</span> <a href="Depyt.Serializer.html">Serializer</a> = <code class="code"><span class="keyword">sig</span></code> <a href="Depyt.Serializer.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info">
-Serialization.
+<pre><span class="keyword">module</span> <a href="Depyt.Bin.html">Bin</a>: <code class="code"><span class="keyword">sig</span></code> <a href="Depyt.Bin.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info">
+Binary serialization.
 </div>
 
-<pre><span class="keyword">module</span> <a href="Depyt.Bin.html">Bin</a>: <code class="type"><a href="Depyt.Serializer.html">Serializer</a></code><code class="type"> </code></pre><div class="info">
-Binary serializers.
-</div>
-
-<pre><span class="keyword">module</span> <a href="Depyt.Json.html">Json</a>: <code class="type"><a href="Depyt.Serializer.html">Serializer</a></code><code class="type"> </code></pre><div class="info">
+<pre><span class="keyword">module</span> <a href="Depyt.Json.html">Json</a>: <code class="code"><span class="keyword">sig</span></code> <a href="Depyt.Json.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info">
 JSON serializers.
 </div>
 </body></html>

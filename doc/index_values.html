@@ -6,7 +6,6 @@
 <link title="Index of types" rel=Appendix href="index_types.html">
 <link title="Index of values" rel=Appendix href="index_values.html">
 <link title="Index of modules" rel=Appendix href="index_modules.html">
-<link title="Index of module types" rel=Appendix href="index_module_types.html">
 <link title="Depyt" rel="Chapter" href="Depyt.html"><title>Index of values</title>
 </head>
 <body>
@@ -25,6 +24,12 @@
 <code class="code">v |~ c</code> is <code class="code">v</code> augmented with the case <code class="code">c</code>.
 </div>
 </td></tr>
+<tr><td align="left"><br>B</td></tr>
+<tr><td><a href="Depyt.html#VALbool">bool</a> [<a href="Depyt.html">Depyt</a>]</td>
+<td><div class="info">
+<code class="code">bool</code> is a representation of the boolean type.
+</div>
+</td></tr>
 <tr><td align="left"><br>C</td></tr>
 <tr><td><a href="Depyt.html#VALcase0">case0</a> [<a href="Depyt.html">Depyt</a>]</td>
 <td><div class="info">
@@ -37,6 +42,11 @@
 <code class="code">case1 n t c</code> is a representation of a variant case <code class="code">n</code> with 1
     argument of type <code class="code">t</code> and a pattern <code class="code">c</code> an function with one argument
     of type <code class="code">t</code>.
+</div>
+</td></tr>
+<tr><td><a href="Depyt.html#VALchar">char</a> [<a href="Depyt.html">Depyt</a>]</td>
+<td><div class="info">
+<code class="code">char</code> is a representation of the character type.
 </div>
 </td></tr>
 <tr><td><a href="Depyt.html#VALcompare">compare</a> [<a href="Depyt.html">Depyt</a>]</td>
@@ -63,10 +73,25 @@
     with getter <code class="code">g</code>.
 </div>
 </td></tr>
+<tr><td><a href="Depyt.html#VALfloat">float</a> [<a href="Depyt.html">Depyt</a>]</td>
+<td><div class="info">
+<code class="code">float</code> is a representation of the float type.
+</div>
+</td></tr>
 <tr><td align="left"><br>I</td></tr>
 <tr><td><a href="Depyt.html#VALint">int</a> [<a href="Depyt.html">Depyt</a>]</td>
 <td><div class="info">
 <code class="code">int</code> is a representation of the integer type.
+</div>
+</td></tr>
+<tr><td><a href="Depyt.html#VALint32">int32</a> [<a href="Depyt.html">Depyt</a>]</td>
+<td><div class="info">
+<code class="code">int32</code> is a representation of the 32-bit integers type.
+</div>
+</td></tr>
+<tr><td><a href="Depyt.html#VALint64">int64</a> [<a href="Depyt.html">Depyt</a>]</td>
+<td><div class="info">
+<code class="code">int64</code> is a representation of the 64-bit integer type.
 </div>
 </td></tr>
 <tr><td align="left"><br>L</td></tr>
@@ -105,7 +130,7 @@
 </div>
 </td></tr>
 <tr><td align="left"><br>R</td></tr>
-<tr><td><a href="Depyt.Serializer.html#VALread">read</a> [<a href="Depyt.Serializer.html">Depyt.Serializer</a>]</td>
+<tr><td><a href="Depyt.Bin.html#VALread">read</a> [<a href="Depyt.Bin.html">Depyt.Bin</a>]</td>
 <td><div class="info">
 <code class="code">read t</code> reads a serialization of a value of type <code class="code">t</code>.
 </div>
@@ -127,7 +152,7 @@
 <code class="code">sealv v</code> seals the open variant <code class="code">v</code>.
 </div>
 </td></tr>
-<tr><td><a href="Depyt.Serializer.html#VALsize_of">size_of</a> [<a href="Depyt.Serializer.html">Depyt.Serializer</a>]</td>
+<tr><td><a href="Depyt.Bin.html#VALsize_of">size_of</a> [<a href="Depyt.Bin.html">Depyt.Bin</a>]</td>
 <td><div class="info">
 <code class="code">size_of t</code> is the size needed to serialize values of type <code class="code">t</code>.
 </div>
@@ -151,7 +176,7 @@
 </div>
 </td></tr>
 <tr><td align="left"><br>W</td></tr>
-<tr><td><a href="Depyt.Serializer.html#VALwrite">write</a> [<a href="Depyt.Serializer.html">Depyt.Serializer</a>]</td>
+<tr><td><a href="Depyt.Bin.html#VALwrite">write</a> [<a href="Depyt.Bin.html">Depyt.Bin</a>]</td>
 <td><div class="info">
 <code class="code">write t</code> serializes values of type <code class="code">t</code>.
 </div>
