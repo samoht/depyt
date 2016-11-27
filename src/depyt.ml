@@ -228,6 +228,51 @@ module Refl = struct
 
 end
 
+module Pp = struct
+
+  let unit ppf () = Fmt.string ppf "()"
+  let int = Fmt.int
+  let string ppf x = Fmt.pf ppf "%S" x
+  let list = Fmt.Dump.list
+  let pair = Fmt.Dump.pair
+  let option = Fmt.Dump.option
+
+  let rec t: type a. a t -> a Fmt.t = function
+  | Self s     -> t s.self
+  | Prim t     -> prim t
+  | List l     -> list (t l)
+  | Pair (x,y) -> pair (t x) (t y)
+  | Option x   -> option (t x)
+  | Record r   -> record r
+  | Variant v  -> variant v
+
+  and prim: type a. a prim -> a Fmt.t = function
+  | Unit   -> unit
+  | Int    -> int
+  | String -> string
+
+  and record: type a. a record -> a Fmt.t = fun r ppf x ->
+    let fields = fields r in
+    Fmt.pf ppf "@[{@ ";
+    List.iter (fun (Field t) ->
+        Fmt.pf ppf "%s = %a;@ " t.fname (field t) x
+      ) fields;
+    Fmt.pf ppf "}@]"
+
+  and field: type a b. (a, b) field -> a Fmt.t = fun f ppf x ->
+    t f.ftype ppf (f.fget x)
+
+  and variant: type a. a variant -> a Fmt.t = fun v ppf x ->
+    case_v ppf (v.vget x)
+
+  and case_v: type a. a case_v Fmt.t = fun ppf -> function
+  | CV0 x       -> Fmt.string ppf x.cname0
+  | CV1 (x, vx) -> Fmt.pf ppf "@[<2>%s %a@]" x.cname1 (t x.ctype1) vx
+
+end
+
+let pp = Pp.t
+
 type 'a equal = 'a -> 'a -> bool
 
 module Equal = struct
@@ -369,51 +414,6 @@ module Compare = struct
 end
 
 let compare = Compare.t
-
-module Pp = struct
-
-  let unit ppf () = Fmt.string ppf "()"
-  let int = Fmt.int
-  let string ppf x = Fmt.pf ppf "%S" x
-  let list = Fmt.Dump.list
-  let pair = Fmt.Dump.pair
-  let option = Fmt.Dump.option
-
-  let rec t: type a. a t -> a Fmt.t = function
-  | Self s     -> t (s.self ())
-  | Prim t     -> prim t
-  | List l     -> list (t l)
-  | Pair (x,y) -> pair (t x) (t y)
-  | Option x   -> option (t x)
-  | Record r   -> record r
-  | Variant v  -> variant v
-
-  and prim: type a. a prim -> a Fmt.t = function
-  | Unit   -> unit
-  | Int    -> int
-  | String -> string
-
-  and record: type a. a record -> a Fmt.t = fun r ppf x ->
-    let fields = fields r in
-    Fmt.pf ppf "@[{@ ";
-    List.iter (fun (Field t) ->
-        Fmt.pf ppf "%s = %a;@ " t.fname (field t) x
-      ) fields;
-    Fmt.pf ppf "}@]"
-
-  and field: type a b. (a, b) field -> a Fmt.t = fun f ppf x ->
-    t f.ftype ppf (f.fget x)
-
-  and variant: type a. a variant -> a Fmt.t = fun v ppf x ->
-    case_v ppf (v.vget x)
-
-  and case_v: type a. a case_v Fmt.t = fun ppf -> function
-  | CV0 x       -> Fmt.string ppf x.cname0
-  | CV1 (x, vx) -> Fmt.pf ppf "@[<2>%s %a@]" x.cname1 (t x.ctype1) vx
-
-end
-
-let pp = Pp.t
 
 type buffer = Cstruct.t
 
