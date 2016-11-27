@@ -245,8 +245,8 @@ val compare: 'a t -> 'a -> 'a -> int
 type buffer = Cstruct.t
 (** The type for buffers. *)
 
-(** Serialization. *)
-module type Serializer = sig
+(** Binary serialization. *)
+module Bin: sig
 
   val size_of: 'a t -> 'a -> int
   (** [size_of t] is the size needed to serialize values of type [t]. *)
@@ -260,11 +260,10 @@ module type Serializer = sig
 
 end
 
-(** Binary serializers. *)
-module Bin: Serializer
-
 (** JSON serializers. *)
-module Json: Serializer
+module Json: sig
+
+end
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Thomas Gazagnaire

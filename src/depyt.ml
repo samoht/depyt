@@ -615,24 +615,6 @@ module Bin = struct
 end
 
 module Json = struct
-  module Sizer_of = struct
-    let t _ = failwith "TODO"
-  end
-  module Write = struct
-    let t _ = failwith "TODO"
-  end
-  module Read = struct
-    let t _ = failwith "TODO"
-  end
-  let size_of = Sizer_of.t
-  let write = Write.t
-  let read = Read.t
-end
-
-module type Serializer = sig
-  val size_of: 'a t -> 'a -> int
-  val write: 'a t -> buffer -> pos:int -> 'a -> int
-  val read: 'a t ->  buffer -> pos:int -> int *  'a
 end
 
 (*---------------------------------------------------------------------------
