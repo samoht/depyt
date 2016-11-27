@@ -804,6 +804,204 @@ let pp_json ?minify t ppf x =
   ignore (Jsonm.encode e `End);
   Fmt.string ppf (Buffer.contents buf)
 
+module Decode_json = struct
+
+  open Result
+
+  type decoder = {
+    mutable lexemes: Jsonm.lexeme list;
+    d: Jsonm.decoder;
+  }
+
+  type 'a decode = decoder -> ('a, string) result
+
+  let decoder d = { lexemes = []; d }
+  let of_lexemes lexemes = { lexemes; d = Jsonm.decoder (`String "") }
+  let rewind e l = e.lexemes <- l :: e.lexemes
+
+  let lexeme e =
+    match e.lexemes with
+    | h::t -> e.lexemes <- t; Ok h
+    | [] ->
+        match Jsonm.decode e.d with
+        | `Lexeme e     -> Ok e
+        | `Error e      -> Error (Fmt.to_to_string Jsonm.pp_error e)
+        | `End | `Await -> assert false
+
+  let (>>=) l f = match l with
+  | Error _ as e -> e
+  | Ok l -> f l
+
+  let (>|=) l f = match l with
+  | Ok l -> Ok (f l)
+  | Error _ as e -> e
+
+  let error e got expected =
+    let _, (l, c) = Jsonm.decoded_range e.d in
+    Error (Fmt.strf
+             "line %d, character %d:\nFound lexeme %a, but \
+              lexeme %s was expected" l c Jsonm.pp_lexeme got expected)
+
+  let expect_lexeme e expected =
+    lexeme e >>= fun got ->
+    if expected = got then Ok ()
+    else error e got (Fmt.to_to_string Jsonm.pp_lexeme expected)
+
+  (* read all lexemes until the end of the next well-formed value *)
+  let value e =
+    let lexemes = ref [] in
+    let objs = ref 0 in
+    let arrs = ref 0 in
+    let rec aux () =
+      lexeme e >>= fun l ->
+      lexemes := l :: !lexemes;
+      let () = match l with
+      | `Os -> incr objs
+      | `As -> incr arrs
+      | `Oe -> decr objs
+      | `Ae -> decr arrs
+      | `Name _
+      | `Null
+      | `Bool _
+      | `String _
+      | `Float _ -> ()
+      in
+      if !objs > 0 || !arrs > 0 then aux ()
+      else Ok ()
+    in
+    aux () >|= fun () ->
+    List.rev !lexemes
+
+  let unit e = expect_lexeme e `Null
+
+  let string e =
+    lexeme e >>= function
+    | `String s -> Ok s
+    | l         -> error e l "`String"
+
+  let float e =
+    lexeme e >>= function
+    | `Float f -> Ok f
+    | l        -> error e l "`Float"
+
+  let char e =
+    lexeme e >>= function
+    | `String s when String.length s = 1 -> Ok (String.get s 1)
+    | l -> error e l "`String[1]"
+
+  let int32 e = float e >|= Int32.of_float
+  let int64 e = float e >|= Int64.of_float
+  let int e   = float e >|= int_of_float
+  let bool e  = int e >|= function 0 -> false | _ -> true
+
+  let list l e =
+    expect_lexeme e `As >>= fun () ->
+    let rec aux acc =
+      lexeme e >>= function
+      | `Ae -> Ok (List.rev acc)
+      | lex ->
+          rewind e lex;
+          l e >>= fun v ->
+          aux (v :: acc)
+    in
+    aux []
+
+  let pair a b e =
+    expect_lexeme e `As >>= fun () ->
+    a e >>= fun x ->
+    b e >>= fun y ->
+    expect_lexeme e `Ae >|= fun () ->
+    x, y
+
+  let option o e =
+    lexeme e >>= function
+    | `Null -> Ok None
+    | lex   ->
+        rewind e lex;
+        o e >|= fun v -> Some v
+
+  let rec t: type a. a t -> a decode = function
+  | Self s     -> t s.self
+  | Prim t     -> prim t
+  | List l     -> list (t l)
+  | Pair (x,y) -> pair (t x) (t y)
+  | Option x   -> option (t x)
+  | Record r   -> record r
+  | Variant v  -> variant v
+
+  and prim: type a. a prim -> a decode = function
+  | Unit   -> unit
+  | Bool   -> bool
+  | Char   -> char
+  | Int    -> int
+  | Int32  -> int32
+  | Int64  -> int64
+  | Float  -> float
+  | String -> string
+
+  and record: type a. a record -> a decode = fun r e ->
+    expect_lexeme e `Os >>= fun () ->
+    let rec soup acc =
+      lexeme e >>= function
+      | `Name n ->
+          value e >>= fun s ->
+          soup ((n, s) :: acc)
+      | `Oe -> Ok acc
+      | l   -> error e l "`Record-contents"
+    in
+    soup [] >>= fun soup ->
+    let rec aux: type a b. (a, b) fields -> b -> (a, string) result = fun f c ->
+      match f with
+      | F0        -> Ok c
+      | F1 (h, f) ->
+          let v =
+            try
+              let s = List.assoc h.fname soup in
+              let e = of_lexemes s in
+              t h.ftype e
+            with Not_found ->
+            match h.ftype with
+            | Option _ -> Ok None
+            | _        ->
+                Error (Fmt.strf "missing value for %s.%s" r.rname h.fname)
+          in
+          match v with
+          | Ok v         -> aux f (c v)
+          | Error _ as e -> e
+    in
+    let Fields (f, c) = r.rfields in
+    aux f c
+
+  and variant: type a. a variant -> a decode = fun v e ->
+    lexeme e >>= function
+    | `String s -> case0 s v e
+    | `Os       -> case1 v e
+    | l         -> error e l "(`String | `Os)"
+
+  and case0: type a. string -> a variant -> a decode = fun s v _e ->
+    let rec aux i = match v.vcases.(i) with
+    | C0 c when String.compare c.cname0 s = 0 -> Ok c.c0
+    | _ -> if i < Array.length v.vcases then aux (i+1) else Error "variant"
+    in
+    aux 0
+
+  and case1: type a. a variant -> a decode = fun v e ->
+    lexeme e >>= function
+    | `Name s ->
+        let rec aux i = match v.vcases.(i) with
+        | C1 c when String.compare c.cname1 s = 0 -> t c.ctype1 e >|= c.c1
+        | _ -> if i < Array.length v.vcases then aux (i+1) else Error "variant"
+        in
+        aux 0 >>= fun c ->
+        expect_lexeme e `Oe >|= fun () ->
+        c
+    | l -> error e l "`Name"
+
+end
+
+let decode_json x d = Decode_json.(t x @@ decoder d)
+
+
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Thomas Gazagnaire
 

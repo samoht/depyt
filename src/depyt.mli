@@ -276,29 +276,6 @@ val read: 'a t ->  buffer -> pos:int -> int * 'a
 
 (** {2 JSON converters} *)
 
-val encode_json: 'a t -> Jsonm.encoder -> 'a -> unit
-(** [encode_json e t] encodes [t] into the
-    {{:http://erratique.ch/software/jsonm}jsonm} encoder [e]. The
-    encoding is a relatively straightforward translation of the OCaml
-    structure into JSON. The main highlights are:
-
-    {ul
-    {- OCaml [ints] are translated into JSON floats.}
-    {- OCaml strings are translated into JSON strings. You must then
-       ensure that the OCaml strings contains only valid UTF-8
-       characters.}
-    {- OCaml record fields of type ['a option] are automatically
-       unboxed in their JSON representation. If the value if [None],
-       the field is removed from the JSON object.}
-    {- variant cases built using {!case0} are represented as strings.}
-    {- variant cases built using {!case1} are represented as a record
-       with one field; the field name is the name of the variant.}
-    ul}
-
-    {b NOTE:} this can be used to encode JSON fragments. That's the
-    responsibility of the caller to ensure that the encoded JSON
-    fragment fits properly into a well-formed JSON object. *)
-
 val pp_json: ?minify:bool -> 'a t -> 'a Fmt.t
 (** Similar to {!pp} but pretty-prints the JSON representation instead
     of the OCaml one. See {!encode_json} for details about the encoding.
@@ -322,6 +299,33 @@ val pp_json: ?minify:bool -> 'a t -> 'a Fmt.t
 
     {b NOTE:} this will automatically convert JSON fragments to valid
     JSON objects by adding an enclosing array if necessary. *)
+
+val encode_json: 'a t -> Jsonm.encoder -> 'a -> unit
+(** [encode_json t e] encodes [t] into the
+    {{:http://erratique.ch/software/jsonm}jsonm} encoder [e]. The
+    encoding is a relatively straightforward translation of the OCaml
+    structure into JSON. The main highlights are:
+
+    {ul
+    {- OCaml [ints] are translated into JSON floats.}
+    {- OCaml strings are translated into JSON strings. You must then
+       ensure that the OCaml strings contains only valid UTF-8
+       characters.}
+    {- OCaml record fields of type ['a option] are automatically
+       unboxed in their JSON representation. If the value if [None],
+       the field is removed from the JSON object.}
+    {- variant cases built using {!case0} are represented as strings.}
+    {- variant cases built using {!case1} are represented as a record
+       with one field; the field name is the name of the variant.}
+    ul}
+
+    {b NOTE:} this can be used to encode JSON fragments. That's the
+    responsibility of the caller to ensure that the encoded JSON
+    fragment fits properly into a well-formed JSON object. *)
+
+val decode_json: 'a t -> Jsonm.decoder -> ('a, string) Result.result
+(** [decode_json t e] decodes values of type [t] from the
+    {{:http://erratique.ch/software/jsonm}jsonm} decoder [e]. *)
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Thomas Gazagnaire

@@ -156,6 +156,24 @@ let test_bin_read () =
   check e e2;
   check e e3
 
+let test_parse_json () =
+  let check t x =
+    (* we wrap the JSON fragment into a list to be sure that `pp_json`
+       will not try to wrap the result in a list. *)
+    let str = Fmt.to_to_string (pp_json (list t)) [x] in
+    match decode_json (list t) (Jsonm.decoder (`String str)) with
+    | Ok y    -> Alcotest.(check @@ list (test t)) __LOC__ [x] y
+    | Error e -> Alcotest.fail (__LOC__ ^ "\n" ^ e)
+  in
+  check r r1;
+  check r r2;
+  check v v1;
+  check v v2;
+  check v v3;
+  check e e1;
+  check e e2;
+  check e e3
+
 let () =
   Alcotest.run "depyt" [
     "basic", [
@@ -165,6 +183,7 @@ let () =
       "compare", `Quick, test_compare;
       "write"  , `Quick, test_bin_write;
       "read"   , `Quick, test_bin_read;
+      "json"   , `Quick, test_parse_json;
     ]
   ]
 
