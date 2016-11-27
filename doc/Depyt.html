@@ -14,6 +14,8 @@
 <link title="Variants" rel="Section" href="#variants">
 <link title="Recursive definitions" rel="Section" href="#recursive">
 <link title="Generic Operations" rel="Section" href="#generics">
+<link title="Binary serialization" rel="Subsection" href="#2_Binaryserialization">
+<link title="JSON converters" rel="Subsection" href="#2_JSONconverters">
 <title>Depyt</title>
 </head>
 <body>
@@ -47,7 +49,7 @@ Yet-an-other type combinator library
     and converting between intermediate formats.
 <p>
 
-    <em>e904ec5 — <a href="https://github.com/samoht/depyt ">homepage</a></em><br>
+    <em>ad39af4 — <a href="https://github.com/samoht/depyt ">homepage</a></em><br>
 </div>
 <hr width="100%">
 <br>
@@ -318,18 +320,96 @@ The type for representing open variants of type <code class="code"><span class="
 <pre><span id="VALcompare"><span class="keyword">val</span> compare</span> : <code class="type">'a <a href="Depyt.html#TYPEt">t</a> -> 'a -> 'a -> int</code></pre><div class="info ">
 <code class="code">compare t</code> compares values of type <code class="code">t</code>.<br>
 </div>
+<br>
+<h2 id="2_Binaryserialization">Binary serialization</h2><br>
 
-<pre><span id="TYPEbuffer"><span class="keyword">type</span> <code class="type"></code>buffer</span> = <code class="type">Cstruct.t</code> </pre>
+<pre><code><span id="TYPEbuffer"><span class="keyword">type</span> <code class="type"></code>buffer</span> = </code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTbuffer.C"><span class="constructor">C</span></span> <span class="keyword">of</span> <code class="type">Cstruct.t</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTbuffer.B"><span class="constructor">B</span></span> <span class="keyword">of</span> <code class="type">bytes</code></code></td>
+
+</tr></table>
+
 <div class="info ">
 The type for buffers.<br>
 </div>
 
 
-<pre><span class="keyword">module</span> <a href="Depyt.Bin.html">Bin</a>: <code class="code"><span class="keyword">sig</span></code> <a href="Depyt.Bin.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info">
-Binary serialization.
+<pre><span id="VALsize_of"><span class="keyword">val</span> size_of</span> : <code class="type">'a <a href="Depyt.html#TYPEt">t</a> -> 'a -> int</code></pre><div class="info ">
+<code class="code">size_of t</code> is the size needed to serialize values of type <code class="code">t</code>.<br>
 </div>
 
-<pre><span class="keyword">module</span> <a href="Depyt.Json.html">Json</a>: <code class="code"><span class="keyword">sig</span></code> <a href="Depyt.Json.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info">
-JSON serializers.
+<pre><span id="VALwrite"><span class="keyword">val</span> write</span> : <code class="type">'a <a href="Depyt.html#TYPEt">t</a> -> <a href="Depyt.html#TYPEbuffer">buffer</a> -> pos:int -> 'a -> int</code></pre><div class="info ">
+<code class="code">write t</code> serializes values of type <code class="code">t</code>. Use <code class="code">size_of</code> to
+    pre-determine the size of the buffer.<br>
+</div>
+
+<pre><span id="VALread"><span class="keyword">val</span> read</span> : <code class="type">'a <a href="Depyt.html#TYPEt">t</a> -> <a href="Depyt.html#TYPEbuffer">buffer</a> -> pos:int -> int * 'a</code></pre><div class="info ">
+<code class="code">read t</code> reads a serialization of a value of type <code class="code">t</code>.<br>
+</div>
+<br>
+<h2 id="2_JSONconverters">JSON converters</h2><br>
+
+<pre><span id="VALencode_json"><span class="keyword">val</span> encode_json</span> : <code class="type">'a <a href="Depyt.html#TYPEt">t</a> -> Jsonm.encoder -> 'a -> unit</code></pre><div class="info ">
+<code class="code">encode_json e t</code> encodes <code class="code">t</code> into the
+    <a href="http://erratique.ch/software/jsonm">jsonm</a> encoder <code class="code">e</code>. The
+    encoding is a relatively straightforward translation of the OCaml
+    structure into JSON. The main highlights are:
+<p>
+
+    <ul>
+<li>OCaml <code class="code">ints</code> are translated into JSON floats.</li>
+<li>OCaml strings are translated into JSON strings. You must then
+       ensure that the OCaml strings contains only valid UTF-8
+       characters.</li>
+<li>OCaml record fields of type <code class="code"><span class="keywordsign">'</span>a option</code> are automatically
+       unboxed in their JSON representation. If the value if <code class="code"><span class="constructor">None</span></code>,
+       the field is removed from the JSON object.</li>
+<li>variant cases built using <a href="Depyt.html#VALcase0"><code class="code"><span class="constructor">Depyt</span>.case0</code></a> are represented as strings.</li>
+<li>variant cases built using <a href="Depyt.html#VALcase1"><code class="code"><span class="constructor">Depyt</span>.case1</code></a> are represented as a record
+       with one field; the field name is the name of the variant.</li>
+</ul>
+
+<p>
+
+    <b>NOTE:</b> this can be used to encode JSON fragments. That's the
+    responsibility of the caller to ensure that the encoded JSON
+    fragment fits properly into a well-formed JSON object.<br>
+</div>
+
+<pre><span id="VALpp_json"><span class="keyword">val</span> pp_json</span> : <code class="type">?minify:bool -> 'a <a href="Depyt.html#TYPEt">t</a> -> 'a Fmt.t</code></pre><div class="info ">
+Similar to <a href="Depyt.html#VALpp"><code class="code"><span class="constructor">Depyt</span>.pp</code></a> but pretty-prints the JSON representation instead
+    of the OCaml one. See <a href="Depyt.html#VALencode_json"><code class="code"><span class="constructor">Depyt</span>.encode_json</code></a> for details about the encoding.
+<p>
+
+    For instance:
+<p>
+
+    <pre class="codepre"><code class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;t&nbsp;=&nbsp;{&nbsp;foo:&nbsp;int&nbsp;option;&nbsp;bar:&nbsp;string&nbsp;list&nbsp;};;
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;t&nbsp;=
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;record&nbsp;<span class="string">"r"</span>&nbsp;(<span class="keyword">fun</span>&nbsp;foo&nbsp;bar&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;{&nbsp;foo;&nbsp;bar&nbsp;})
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|+&nbsp;field&nbsp;<span class="string">"foo"</span>&nbsp;(option&nbsp;int)&nbsp;(<span class="keyword">fun</span>&nbsp;t&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;t.foo)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|+&nbsp;field&nbsp;<span class="string">"bar"</span>&nbsp;(list&nbsp;string)&nbsp;(<span class="keyword">fun</span>&nbsp;t&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;t.bar)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&gt;&nbsp;sealr
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;s&nbsp;=&nbsp;<span class="constructor">Fmt</span>.strf&nbsp;<span class="string">"%a\n"</span>&nbsp;(pp&nbsp;t)&nbsp;{&nbsp;foo&nbsp;=&nbsp;<span class="constructor">None</span>;&nbsp;bar&nbsp;=&nbsp;[<span class="string">"foo"</span>]&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">(*&nbsp;s&nbsp;is&nbsp;"{&nbsp;foo&nbsp;=&nbsp;None;&nbsp;bar&nbsp;=&nbsp;[\"foo\"];&nbsp;}"&nbsp;*)</span>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;j&nbsp;=&nbsp;<span class="constructor">Fmt</span>.strf&nbsp;<span class="string">"%a\n"</span>&nbsp;(pp_json&nbsp;t)&nbsp;{&nbsp;foo&nbsp;=&nbsp;<span class="constructor">None</span>;&nbsp;bar&nbsp;=&nbsp;[<span class="string">"foo"</span>]&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">(*&nbsp;j&nbsp;is&nbsp;"{&nbsp;\"bar\":[\"foo\"]&nbsp;}"&nbsp;*)</span></code></pre>
+<p>
+
+    <b>NOTE:</b> this will automatically convert JSON fragments to valid
+    JSON objects by adding an enclosing array if necessary.<br>
 </div>
 </body></html>

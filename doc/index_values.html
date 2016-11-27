@@ -55,6 +55,12 @@
 </div>
 </td></tr>
 <tr><td align="left"><br>E</td></tr>
+<tr><td><a href="Depyt.html#VALencode_json">encode_json</a> [<a href="Depyt.html">Depyt</a>]</td>
+<td><div class="info">
+<code class="code">encode_json e t</code> encodes <code class="code">t</code> into the
+    <a href="http://erratique.ch/software/jsonm">jsonm</a> encoder <code class="code">e</code>.
+</div>
+</td></tr>
 <tr><td><a href="Depyt.html#VALenum">enum</a> [<a href="Depyt.html">Depyt</a>]</td>
 <td><div class="info">
 <code class="code">enum n l</code> is a representation of the variant type which has
@@ -129,8 +135,14 @@
 <code class="code">pp t</code> is the pretty-printer for values of type <code class="code">t</code>.
 </div>
 </td></tr>
+<tr><td><a href="Depyt.html#VALpp_json">pp_json</a> [<a href="Depyt.html">Depyt</a>]</td>
+<td><div class="info">
+Similar to <a href="Depyt.html#VALpp"><code class="code"><span class="constructor">Depyt</span>.pp</code></a> but pretty-prints the JSON representation instead
+    of the OCaml one.
+</div>
+</td></tr>
 <tr><td align="left"><br>R</td></tr>
-<tr><td><a href="Depyt.Bin.html#VALread">read</a> [<a href="Depyt.Bin.html">Depyt.Bin</a>]</td>
+<tr><td><a href="Depyt.html#VALread">read</a> [<a href="Depyt.html">Depyt</a>]</td>
 <td><div class="info">
 <code class="code">read t</code> reads a serialization of a value of type <code class="code">t</code>.
 </div>
@@ -152,7 +164,7 @@
 <code class="code">sealv v</code> seals the open variant <code class="code">v</code>.
 </div>
 </td></tr>
-<tr><td><a href="Depyt.Bin.html#VALsize_of">size_of</a> [<a href="Depyt.Bin.html">Depyt.Bin</a>]</td>
+<tr><td><a href="Depyt.html#VALsize_of">size_of</a> [<a href="Depyt.html">Depyt</a>]</td>
 <td><div class="info">
 <code class="code">size_of t</code> is the size needed to serialize values of type <code class="code">t</code>.
 </div>
@@ -176,7 +188,7 @@
 </div>
 </td></tr>
 <tr><td align="left"><br>W</td></tr>
-<tr><td><a href="Depyt.Bin.html#VALwrite">write</a> [<a href="Depyt.Bin.html">Depyt.Bin</a>]</td>
+<tr><td><a href="Depyt.html#VALwrite">write</a> [<a href="Depyt.html">Depyt</a>]</td>
 <td><div class="info">
 <code class="code">write t</code> serializes values of type <code class="code">t</code>.
 </div>
