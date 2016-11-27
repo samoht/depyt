@@ -257,10 +257,10 @@ val equal: 'a t -> 'a -> 'a -> bool
 val compare: 'a t -> 'a -> 'a -> int
 (** [compare t] compares values of type [t]. *)
 
+(** {2 Binary serialization} *)
+
 type buffer = Cstruct.t
 (** The type for buffers. *)
-
-(** {2 Binary serialization} *)
 
 val size_of: 'a t -> 'a -> int
 (** [size_of t] is the size needed to serialize values of type [t]. *)
@@ -276,7 +276,22 @@ val read: 'a t ->  buffer -> pos:int -> int * 'a
 
 val encode_json: 'a t -> Jsonm.encoder -> 'a -> unit
 (** [encode_json e t] encodes [t] into the
-    {{:jsonm}http://erratique.ch/software/jsonm}JSON} encoder [e].
+    {{:http://erratique.ch/software/jsonm}jsonm} encoder [e]. The
+    encoding is a relatively straightforward translation of the OCaml
+    structure into JSON. The main highlights are:
+
+    {ul
+    {- OCaml [ints] are translated into JSON floats.}
+    {- OCaml strings are translated into JSON strings. You must then
+       ensure that the OCaml strings contains only valid UTF-8
+       characters.}
+    {- OCaml record fields of type ['a option] are automatically
+       unboxed in their JSON representation. If the value if [None],
+       the field is removed from the JSON object.}
+    {- variant cases built using {!case0} are represented as strings.}
+    {- variant cases built using {!case1} are represented as a record
+       with one field; the field name is the name of the variant.}
+    ul}
 
     {b NOTE:} this can be used to encode JSON fragments. That's the
     responsibility of the caller to ensure that the encoded JSON
@@ -284,7 +299,24 @@ val encode_json: 'a t -> Jsonm.encoder -> 'a -> unit
 
 val pp_json: ?minify:bool -> 'a t -> 'a Fmt.t
 (** Similar to {!pp} but pretty-prints the JSON representation instead
-    of the OCaml one.
+    of the OCaml one. See {!encode_json} for details about the encoding.
+
+    For instance:
+
+    {[
+      type t = { foo: int option; bar: string list };;
+
+      let t =
+        record "r" (fun foo bar -> { foo; bar })
+        |+ field "foo" (option int) (fun t -> t.foo)
+        |+ field "bar" (list string) (fun t -> t.bar)
+        |> sealr
+
+      let s = Fmt.strf "%a\n" (pp t) { foo = None; bar = ["foo"] }
+      (* s is "{ foo = None; bar = [\"foo\"]; }" *)
+
+      let j = Fmt.strf "%a\n" (pp_json t) { foo = None; bar = ["foo"] }
+      (* j is "{ \"bar\":[\"foo\"] }" *)]}
 
     {b NOTE:} this will automatically convert JSON fragments to valid
     JSON objects by adding an enclosing array if necessary. *)

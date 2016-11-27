@@ -36,16 +36,21 @@ To define records:
 
 ```ocaml
 # open Depyt;;
-# type t = { foo: int; bar: string list };;
+# type t = { foo: int option; bar: string list };;
 # let t =
     record "r" (fun foo bar -> { foo; bar })
-    |+ field "foo" int (fun t -> t.foo)
+    |+ field "foo" (option int) (fun t -> t.foo)
     |+ field "bar" (list string) (fun t -> t.bar)
     |> sealr
 va t : t Depyt.t = <abstr>
 
-# Fmt.pr "t = %a\n" (pp t) { foor = 3; bar = ["foo"] };;
-{ foo = 3; bar = ["foo"]; }
+# Fmt.pr "%a\n" (pp t) { foo = Som 3; bar = ["foo"] };;
+{ foo = Some 3; bar = ["foo"]; }
+- : unit = ()
+
+(* [None] fields do not appear in the generated JSON *)
+# Fmt.pr "%a\n" (pp_json t) { foo = None; bar = ["1";"2"] };;
+{"bar":["1","2"]}
 - : unit = ()
 ```
 
