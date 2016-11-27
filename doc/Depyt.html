@@ -49,7 +49,7 @@ Yet-an-other type combinator library
     and converting between intermediate formats.
 <p>
 
-    <em>ad39af4 — <a href="https://github.com/samoht/depyt ">homepage</a></em><br>
+    <em>7912aec — <a href="https://github.com/samoht/depyt ">homepage</a></em><br>
 </div>
 <hr width="100%">
 <br>
@@ -359,33 +359,6 @@ The type for buffers.<br>
 <br>
 <h2 id="2_JSONconverters">JSON converters</h2><br>
 
-<pre><span id="VALencode_json"><span class="keyword">val</span> encode_json</span> : <code class="type">'a <a href="Depyt.html#TYPEt">t</a> -> Jsonm.encoder -> 'a -> unit</code></pre><div class="info ">
-<code class="code">encode_json e t</code> encodes <code class="code">t</code> into the
-    <a href="http://erratique.ch/software/jsonm">jsonm</a> encoder <code class="code">e</code>. The
-    encoding is a relatively straightforward translation of the OCaml
-    structure into JSON. The main highlights are:
-<p>
-
-    <ul>
-<li>OCaml <code class="code">ints</code> are translated into JSON floats.</li>
-<li>OCaml strings are translated into JSON strings. You must then
-       ensure that the OCaml strings contains only valid UTF-8
-       characters.</li>
-<li>OCaml record fields of type <code class="code"><span class="keywordsign">'</span>a option</code> are automatically
-       unboxed in their JSON representation. If the value if <code class="code"><span class="constructor">None</span></code>,
-       the field is removed from the JSON object.</li>
-<li>variant cases built using <a href="Depyt.html#VALcase0"><code class="code"><span class="constructor">Depyt</span>.case0</code></a> are represented as strings.</li>
-<li>variant cases built using <a href="Depyt.html#VALcase1"><code class="code"><span class="constructor">Depyt</span>.case1</code></a> are represented as a record
-       with one field; the field name is the name of the variant.</li>
-</ul>
-
-<p>
-
-    <b>NOTE:</b> this can be used to encode JSON fragments. That's the
-    responsibility of the caller to ensure that the encoded JSON
-    fragment fits properly into a well-formed JSON object.<br>
-</div>
-
 <pre><span id="VALpp_json"><span class="keyword">val</span> pp_json</span> : <code class="type">?minify:bool -> 'a <a href="Depyt.html#TYPEt">t</a> -> 'a Fmt.t</code></pre><div class="info ">
 Similar to <a href="Depyt.html#VALpp"><code class="code"><span class="constructor">Depyt</span>.pp</code></a> but pretty-prints the JSON representation instead
     of the OCaml one. See <a href="Depyt.html#VALencode_json"><code class="code"><span class="constructor">Depyt</span>.encode_json</code></a> for details about the encoding.
@@ -411,5 +384,37 @@ Similar to <a href="Depyt.html#VALpp"><code class="code"><span class="constructo
 
     <b>NOTE:</b> this will automatically convert JSON fragments to valid
     JSON objects by adding an enclosing array if necessary.<br>
+</div>
+
+<pre><span id="VALencode_json"><span class="keyword">val</span> encode_json</span> : <code class="type">'a <a href="Depyt.html#TYPEt">t</a> -> Jsonm.encoder -> 'a -> unit</code></pre><div class="info ">
+<code class="code">encode_json t e</code> encodes <code class="code">t</code> into the
+    <a href="http://erratique.ch/software/jsonm">jsonm</a> encoder <code class="code">e</code>. The
+    encoding is a relatively straightforward translation of the OCaml
+    structure into JSON. The main highlights are:
+<p>
+
+    <ul>
+<li>OCaml <code class="code">ints</code> are translated into JSON floats.</li>
+<li>OCaml strings are translated into JSON strings. You must then
+       ensure that the OCaml strings contains only valid UTF-8
+       characters.</li>
+<li>OCaml record fields of type <code class="code"><span class="keywordsign">'</span>a option</code> are automatically
+       unboxed in their JSON representation. If the value if <code class="code"><span class="constructor">None</span></code>,
+       the field is removed from the JSON object.</li>
+<li>variant cases built using <a href="Depyt.html#VALcase0"><code class="code"><span class="constructor">Depyt</span>.case0</code></a> are represented as strings.</li>
+<li>variant cases built using <a href="Depyt.html#VALcase1"><code class="code"><span class="constructor">Depyt</span>.case1</code></a> are represented as a record
+       with one field; the field name is the name of the variant.</li>
+</ul>
+
+<p>
+
+    <b>NOTE:</b> this can be used to encode JSON fragments. That's the
+    responsibility of the caller to ensure that the encoded JSON
+    fragment fits properly into a well-formed JSON object.<br>
+</div>
+
+<pre><span id="VALdecode_json"><span class="keyword">val</span> decode_json</span> : <code class="type">'a <a href="Depyt.html#TYPEt">t</a> -> Jsonm.decoder -> ('a, string) Result.result</code></pre><div class="info ">
+<code class="code">decode_json t e</code> decodes values of type <code class="code">t</code> from the
+    <a href="http://erratique.ch/software/jsonm">jsonm</a> decoder <code class="code">e</code>.<br>
 </div>
 </body></html>
