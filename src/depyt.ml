@@ -37,18 +37,6 @@ end = struct
 
 end
 
-(*
-module Hlist = struct
-
-  type _ t =
-    | []  : 'a t
-    | (::): 'a * 'b t -> ('a * 'b) t
-
-  let cons x y = x :: y
-  let empty = []
-end
-*)
-
 type _ t =
   | Self   : 'a self -> 'a t
   | Prim   : 'a prim -> 'a t
