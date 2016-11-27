@@ -301,10 +301,10 @@ module Equal = struct
 
   let unit _ _ = true
   let bool (x:bool) (y:bool) = x = y
-  let char = Char.equal
+  let char (x:char) (y:char) = x = y
   let int (x:int) (y:int) = x = y
-  let int32 = Int32.equal
-  let int64 = Int64.equal
+  let int32 (x:int32) (y:int32) = x = y
+  let int64 (x:int64) (y:int64) = x = y
   let string x y = x == y || String.compare x y = 0
 
   (* NOTE: equality is ill-defined on float *)
