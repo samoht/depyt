@@ -52,7 +52,12 @@ and 'a self = {
 
 and 'a prim =
   | Unit   : unit prim
+  | Bool   : bool prim
+  | Char   : char prim
   | Int    : int prim
+  | Int32  : int32 prim
+  | Int64  : int64 prim
+  | Float  : float prim
   | String : string prim
 
 and 'a record = {
@@ -105,7 +110,12 @@ and ('a, 'b) case1 = {
 type _ a_field = Field: ('a, 'b) field -> 'a a_field
 
 let unit = Prim Unit
+let bool = Prim Bool
+let char = Prim Char
 let int = Prim Int
+let int32 = Prim Int32
+let int64 = Prim Int64
+let float = Prim Float
 let string = Prim String
 
 let list l = List l
@@ -233,7 +243,12 @@ end
 module Pp = struct
 
   let unit ppf () = Fmt.string ppf "()"
+  let bool = Fmt.bool
+  let char = Fmt.char
   let int = Fmt.int
+  let int32 = Fmt.int32
+  let int64 = Fmt.int64
+  let float = Fmt.float
   let string ppf x = Fmt.pf ppf "%S" x
   let list = Fmt.Dump.list
   let pair = Fmt.Dump.pair
@@ -250,7 +265,12 @@ module Pp = struct
 
   and prim: type a. a prim -> a Fmt.t = function
   | Unit   -> unit
+  | Bool   -> bool
+  | Char   -> char
   | Int    -> int
+  | Int32  -> int32
+  | Int64  -> int64
+  | Float  -> float
   | String -> string
 
   and record: type a. a record -> a Fmt.t = fun r ppf x ->
@@ -280,8 +300,15 @@ type 'a equal = 'a -> 'a -> bool
 module Equal = struct
 
   let unit _ _ = true
+  let bool (x:bool) (y:bool) = x = y
+  let char = Char.equal
   let int (x:int) (y:int) = x = y
+  let int32 = Int32.equal
+  let int64 = Int64.equal
   let string x y = x == y || String.compare x y = 0
+
+  (* NOTE: equality is ill-defined on float *)
+let float (x:float) (y:float) =  x = y
 
   let list e x y =
     x == y || (List.length x = List.length y && List.for_all2 e x y)
@@ -296,8 +323,6 @@ module Equal = struct
     | Some x, Some y -> e x y
     | _ -> false
 
-
-
   let rec t: type a. a t -> a equal = function
   | Self s     -> t s.self
   | Prim p     -> prim p
@@ -309,7 +334,12 @@ module Equal = struct
 
   and prim: type a. a prim -> a equal = function
   | Unit   -> unit
+  | Bool   -> bool
+  | Char   -> char
   | Int    -> int
+  | Int32  -> int32
+  | Int64  -> int64
+  | Float  -> float
   | String -> string
 
   and record: type a. a record -> a equal = fun r x y ->
@@ -342,7 +372,12 @@ type 'a compare = 'a -> 'a -> int
 module Compare = struct
 
   let unit (_:unit) (_:unit) = 0
+  let bool (x:bool) (y:bool) = Pervasives.compare x y
+  let char = Char.compare
   let int (x:int) (y:int) = Pervasives.compare x y
+  let int32 = Int32.compare
+  let int64 = Int64.compare
+  let float (x:float) (y:float) = Pervasives.compare x y
   let string x y = if x == y then 0 else String.compare x y
 
   let list c x y =
@@ -382,7 +417,12 @@ module Compare = struct
 
   and prim: type a. a prim -> a compare = function
   | Unit   -> unit
+  | Bool   -> bool
+  | Char   -> char
   | Int    -> int
+  | Int32  -> int32
+  | Int64  -> int64
+  | Float  -> float
   | String -> string
 
   and record: type a. a record -> a compare = fun r x y ->
@@ -429,7 +469,12 @@ module Bin = struct
 
     let unit () = 0
     let int8 (_:int) = 1
-    let int (_:int) = 8
+    let char (_:char) = 1
+    let int (_:int) = 8 (* NOTE: to be portable, we consider int=int64 *)
+    let int32 (_:int32) = 4
+    let int64 (_:int64) = 8
+    let bool (_:bool) = 1
+    let float (_:float) = 8 (* NOTE: we consider 'double' here *)
     let string s = (int 0) + String.length s
     let list l x = List.fold_left (fun acc x -> acc + l x) (int 0) x
     let pair a b (x, y) = a x + b y
@@ -448,7 +493,12 @@ module Bin = struct
 
     and prim: type a. a prim -> a size_of = function
     | Unit   -> unit
+    | Bool   -> bool
+    | Char   -> char
     | Int    -> int
+    | Int32  -> int32
+    | Int64  -> int64
+    | Float  -> float
     | String -> string
 
     and record: type a. a record -> a size_of = fun r x ->
@@ -471,7 +521,11 @@ module Bin = struct
 
     let unit _ ~pos () = pos
     let int8 buf ~pos i = Cstruct.set_uint8 buf pos i; pos+1
-    let int buf ~pos i = Cstruct.BE.set_uint64 buf pos (Int64.of_int i); pos+8
+    let char buf ~pos c = Cstruct.set_char buf pos c; pos+1
+    let int32 buf ~pos i = Cstruct.BE.set_uint32 buf pos i; pos+4
+    let int64 buf ~pos i = Cstruct.BE.set_uint64 buf pos i; pos+8
+    let int buf ~pos i = int64 buf ~pos (Int64.of_int i)
+    let float buf ~pos f = int64 buf ~pos (Int64.bits_of_float f)
 
     let string buf ~pos str =
       let len = String.length str in
@@ -506,7 +560,12 @@ module Bin = struct
 
     and prim: type a. a prim -> a write = function
     | Unit   -> unit
+    | Bool   -> bool
+    | Char   -> char
     | Int    -> int
+    | Int32  -> int32
+    | Int64  -> int64
+    | Float  -> float
     | String -> string
 
     and record: type a. a record -> a write = fun r buf ~pos x ->
@@ -538,9 +597,12 @@ module Bin = struct
 
     let unit _ ~pos = ok pos ()
     let int8 buf ~pos = ok (pos+1) (Cstruct.get_uint8 buf pos)
-
-    let int buf ~pos =
-      ok (pos+8) (Int64.to_int @@ Cstruct.BE.get_uint64 buf pos)
+    let bool buf ~pos = int8 buf ~pos >|= function 0 -> false | _ -> true
+    let char buf ~pos = ok (pos+1) (Cstruct.get_char buf pos)
+    let int32 buf ~pos = ok (pos+4) (Cstruct.BE.get_uint32 buf pos)
+    let int64 buf ~pos = ok (pos+8) (Cstruct.BE.get_uint64 buf pos)
+    let int buf ~pos = int64 buf ~pos >|= Int64.to_int
+    let float buf ~pos = int64 buf ~pos >|= Int64.float_of_bits
 
     let string buf ~pos =
       int buf ~pos >>= fun (pos, len) ->
@@ -579,7 +641,12 @@ module Bin = struct
 
     and prim: type a. a prim -> a read = function
     | Unit   -> unit
+    | Bool   -> bool
+    | Char   -> char
     | Int    -> int
+    | Int32  -> int32
+    | Int64  -> int64
+    | Float  -> float
     | String -> string
 
     and record: type a. a record -> a read = fun r buf ~pos ->

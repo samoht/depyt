@@ -37,8 +37,23 @@ type 'a t
 val unit: unit t
 (** [unit] is a representation of the unit type. *)
 
+val bool: bool t
+(** [bool] is a representation of the boolean type. *)
+
+val char: char t
+(** [char] is a representation of the character type. *)
+
 val int: int t
 (** [int] is a representation of the integer type. *)
+
+val int32: int32 t
+(** [int32] is a representation of the 32-bit integers type. *)
+
+val int64: int64 t
+(** [int64] is a representation of the 64-bit integer type. *)
+
+val float: float t
+(** [float] is a representation of the float type. *)
 
 val string: string t
 (** [string] is a representation of the string type. *)
