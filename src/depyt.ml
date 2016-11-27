@@ -212,6 +212,8 @@ module Refl = struct
 
   let rec eq: type a b. a t -> b t -> (a, b) eq option = fun a b ->
     match a, b with
+    | Self a, b  -> eq a.self b
+    | a, Self b  -> eq a b.self
     | Prim a, Prim b -> prim a b
     | List a, List b ->
         (match eq a b with Some Refl -> Some Refl | None -> None)
