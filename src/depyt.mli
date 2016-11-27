@@ -61,6 +61,9 @@ val string: string t
 val list: 'a t -> 'a list t
 (** [list t] is a representation of list of values of type [t]. *)
 
+val array: 'a t -> 'a array t
+(** [array t] is a representation of array of values of type [t]. *)
+
 val option: 'a t -> 'a option t
 (** [option t] is a representation of value of type [t option]. *)
 

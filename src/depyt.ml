@@ -41,6 +41,7 @@ type _ t =
   | Self   : 'a self -> 'a t
   | Prim   : 'a prim -> 'a t
   | List   : 'a t -> 'a list t
+  | Array  : 'a t -> 'a array t
   | Tuple  : 'a tuple -> 'a t
   | Option : 'a t -> 'a option t
   | Record : 'a record -> 'a t
@@ -123,6 +124,7 @@ let float = Prim Float
 let string = Prim String
 
 let list l = List l
+let array a = Array a
 let pair a b = Tuple (Pair (a, b))
 let triple a b c = Tuple (Triple (a, b, c))
 let option a = Option a
@@ -264,6 +266,7 @@ module Pp = struct
   let float = Fmt.float
   let string ppf x = Fmt.pf ppf "%S" x
   let list = Fmt.Dump.list
+  let array = Fmt.Dump.array
   let pair = Fmt.Dump.pair
   let triple a b c ppf (x, y, z) = Fmt.pf ppf "(%a, %a, %a)" a x b y c z
   let option = Fmt.Dump.option
@@ -272,6 +275,7 @@ module Pp = struct
   | Self s    -> t s.self
   | Prim t    -> prim t
   | List l    -> list (t l)
+  | Array a   -> array (t a)
   | Tuple t   -> tuple t
   | Option x  -> option (t x)
   | Record r  -> record r
@@ -331,6 +335,14 @@ module Equal = struct
   let list e x y =
     x == y || (List.length x = List.length y && List.for_all2 e x y)
 
+  let array e x y =
+    x == y ||
+    (Array.length x = Array.length y &&
+     let rec aux = function
+     | -1 -> true
+     | i  -> e x.(i) y.(i) && aux (i-1)
+     in aux (Array.length x - 1))
+
   let pair ex ey (x1, y1 as a) (x2, y2 as b) =
     a == b || (ex x1 x2 && ey y1 y2)
 
@@ -348,6 +360,7 @@ module Equal = struct
   | Self s    -> t s.self
   | Prim p    -> prim p
   | List l    -> list (t l)
+  | Array a   -> array (t a)
   | Tuple t   -> tuple t
   | Option x  -> option (t x)
   | Record r  -> record r
@@ -417,6 +430,20 @@ module Compare = struct
     in
     aux x y
 
+  let array c x y =
+    if x == y then 0 else
+    let lenx = Array.length x in
+    let leny = Array.length y in
+    if lenx > leny then 1
+    else if lenx < leny then -1
+    else
+    let rec aux i = match c x.(i) y.(i) with
+    | 0 when i+1 = lenx -> 0
+    | 0 -> aux (i+1)
+    | i -> i
+    in
+    aux 0
+
   let pair cx cy (x1, y1 as a) (x2, y2 as b) =
     if a == b then 0 else
     match cx x1 x2 with
@@ -441,6 +468,7 @@ module Compare = struct
   | Self s    -> t s.self
   | Prim p    -> prim p
   | List l    -> list (t l)
+  | Array a   -> array (t a)
   | Tuple t   -> tuple t
   | Option x  -> option (t x)
   | Record r  -> record r
@@ -512,6 +540,7 @@ module Size_of = struct
   let float (_:float) = 8 (* NOTE: we consider 'double' here *)
   let string s = (int 0) + String.length s
   let list l x = List.fold_left (fun acc x -> acc + l x) (int 0) x
+  let array l x = Array.fold_left (fun acc x -> acc + l x) (int 0) x
   let pair a b (x, y) = a x + b y
   let triple a b c (x, y, z) = a x + b y + c z
   let option o = function
@@ -522,6 +551,7 @@ module Size_of = struct
   | Self s    -> t s.self
   | Prim t    -> prim t
   | List l    -> list (t l)
+  | Array a   -> array (t a)
   | Tuple t   -> tuple t
   | Option x  -> option (t x)
   | Record r  -> record r
@@ -594,6 +624,10 @@ module Write = struct
     let pos = int buf ~pos (List.length x) in
     List.fold_left (fun pos i -> l buf ~pos i) pos x
 
+  let array l buf ~pos x =
+    let pos = int buf ~pos (Array.length x) in
+    Array.fold_left (fun pos i -> l buf ~pos i) pos x
+
   let pair a b buf ~pos (x, y) =
     a buf ~pos x >>= fun pos ->
     b buf ~pos y
@@ -614,6 +648,7 @@ module Write = struct
   | Self s    -> t s.self
   | Prim t    -> prim t
   | List l    -> list (t l)
+  | Array a   -> array (t a)
   | Tuple t   -> tuple t
   | Option x  -> option (t x)
   | Record r  -> record r
@@ -701,6 +736,8 @@ module Read = struct
     in
     aux [] ~pos len
 
+  let array l buf ~pos = list l buf ~pos >|= Array.of_list
+
   let pair a b buf ~pos =
     a buf ~pos >>= fun (pos, a) ->
     b buf ~pos >|= fun b ->
@@ -721,6 +758,7 @@ module Read = struct
   | Self s    -> t s.self
   | Prim t    -> prim t
   | List l    -> list (t l)
+  | Array a   -> array (t a)
   | Tuple t   -> tuple t
   | Option x  -> option (t x)
   | Record r  -> record r
@@ -790,6 +828,11 @@ module Encode_json = struct
     List.iter (l e) x;
     lexeme e `Ae
 
+  let array l e x =
+    lexeme e `As;
+    Array.iter (l e) x;
+    lexeme e `Ae
+
   let pair a b e (x, y) =
     lexeme e `As;
     a e x;
@@ -811,6 +854,7 @@ module Encode_json = struct
   | Self s    -> t s.self
   | Prim t    -> prim t
   | List l    -> list (t l)
+  | Array a   -> array (t a)
   | Tuple t   -> tuple t
   | Option x  -> option (t x)
   | Record r  -> record r
@@ -975,6 +1019,8 @@ module Decode_json = struct
     in
     aux []
 
+  let array l e = list l e >|= Array.of_list
+
   let pair a b e =
     expect_lexeme e `As >>= fun () ->
     a e >>= fun x ->
@@ -1001,6 +1047,7 @@ module Decode_json = struct
   | Self s    -> t s.self
   | Prim t    -> prim t
   | List l    -> list (t l)
+  | Array a   -> array (t a)
   | Tuple t   -> tuple t
   | Option x  -> option (t x)
   | Record r  -> record r
