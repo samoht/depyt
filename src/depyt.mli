@@ -276,7 +276,18 @@ val read: 'a t ->  buffer -> pos:int -> int * 'a
 
 val encode_json: 'a t -> Jsonm.encoder -> 'a -> unit
 (** [encode_json e t] encodes [t] into the
-    {{:jsonm}http://erratique.ch/software/jsonm}JSON} encoder [e]. *)
+    {{:jsonm}http://erratique.ch/software/jsonm}JSON} encoder [e].
+
+    {b NOTE:} this can be used to encode JSON fragments. That's the
+    responsibility of the caller to ensure that the encoded JSON
+    fragment fits properly into a well-formed JSON object. *)
+
+val pp_json: ?minify:bool -> 'a t -> 'a Fmt.t
+(** Similar to {!pp} but pretty-prints the JSON representation instead
+    of the OCaml one.
+
+    {b NOTE:} this will automatically convert JSON fragments to valid
+    JSON objects by adding an enclosing array if necessary. *)
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Thomas Gazagnaire

@@ -753,6 +753,22 @@ end
 
 let encode_json = Encode_json.t
 
+let pp_json ?minify t ppf x =
+  let buf = Buffer.create 42 in
+  let e = Jsonm.encoder ?minify (`Buffer buf) in
+  let wrap_and_encode () = encode_json (list t) e [x] in
+  let encode () = encode_json t e x in
+  let () = match t with
+  | Prim _    -> wrap_and_encode ()
+  | Variant v ->
+      (match v.vget x with
+      | CV0 _ -> wrap_and_encode ()
+      | _     -> encode ())
+  | _ -> encode ()
+  in
+  ignore (Jsonm.encode e `End);
+  Fmt.string ppf (Buffer.contents buf)
+
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Thomas Gazagnaire
 
