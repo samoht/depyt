@@ -9,7 +9,7 @@ compact definitions of records and variants. It also allows to define
 the runtime representation of recursive types.
 
 Depyt is a modern reboot of
-[Dyntype](https://github.com/mirage/dyntype)but using
+[Dyntype](https://github.com/mirage/dyntype) but using
 [GADT](https://en.wikipedia.org/wiki/Generalized_algebraic_data_type)s-based
 combinators instead of syntax-extensions. When we originally wrote
 Dyntype (in 2012) GADTs were not available in OCaml and
