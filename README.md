@@ -1,9 +1,22 @@
 ### Depyt — yet-an-other type combinator library
 
-Depyt is yet an-other type combinator library. It tries to expose a nice API
-to define records and variants. It also exposes higher-level combinators
-to easily generate equality functions, comparators, pretty-printer, parser
-and unparsers.
+Depyt provides type combinators to define runtime representation for
+OCaml types and generic operations to manipulate values with a runtime
+type representation.
+
+The type combinators supports all the usual type primitives but also
+compact definitions of records and variants. It also allows to define
+the runtime representation of recursive types.
+
+Depyt is a modern reboot of
+[Dyntype](https://github.com/mirage/dyntype)but using
+[GADT](https://en.wikipedia.org/wiki/Generalized_algebraic_data_type)s-based
+combinators instead of syntax-extensions. When we originally wrote
+Dyntype (in 2012) GADTs were not available in OCaml and
+[camlp4](https://github.com/ocaml/camlp4) was everywhere -- this is
+not the case anymore. Finally, Depyt avoids some of the performance
+caveats present in Dyntype by avoiding allocating and converting
+between intermediate formats.
 
 #### Variants
 
