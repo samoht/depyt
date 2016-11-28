@@ -8,7 +8,7 @@ doc:          "https://samoht.github.io/depyt/doc"
 license:      "ISC"
 tags:         ["org:mirage"]
 
-build: ["ocaml" "pkg/pkg.ml" "build" "--pinned" pinned ]
+build: ["ocaml" "pkg/pkg.ml" "build" "--pinned" "%{pinned}%" ]
 depends: [
   "ocamlfind" {build}
   "ocamlbuild" {build}
