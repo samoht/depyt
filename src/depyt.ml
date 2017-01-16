@@ -39,6 +39,7 @@ end
 
 type _ t =
   | Self   : 'a self -> 'a t
+  | Like   : ('a t * ('a -> 'b) * ('b -> 'a)) -> 'b t
   | Prim   : 'a prim -> 'a t
   | List   : 'a t -> 'a list t
   | Array  : 'a t -> 'a array t
@@ -128,6 +129,8 @@ let array a = Array a
 let pair a b = Tuple (Pair (a, b))
 let triple a b c = Tuple (Triple (a, b, c))
 let option a = Option a
+
+let like x f g = Like (x, f, g)
 
 (* fix points *)
 
@@ -273,6 +276,7 @@ module Pp = struct
 
   let rec t: type a. a t -> a Fmt.t = function
   | Self s    -> t s.self
+  | Like b    -> like b
   | Prim t    -> prim t
   | List l    -> list (t l)
   | Array a   -> array (t a)
@@ -284,6 +288,9 @@ module Pp = struct
   and tuple: type a. a tuple -> a Fmt.t = function
   | Pair (x,y)     -> pair (t x) (t y)
   | Triple (x,y,z) -> triple (t x) (t y) (t z)
+
+  and like: type a b. a t * (a -> b) * (b -> a) -> b Fmt.t =
+    fun (x, _, g) ppf b -> t x ppf (g b)
 
   and prim: type a. a prim -> a Fmt.t = function
   | Unit   -> unit
@@ -358,6 +365,7 @@ module Equal = struct
 
   let rec t: type a. a t -> a equal = function
   | Self s    -> t s.self
+  | Like b    -> like b
   | Prim p    -> prim p
   | List l    -> list (t l)
   | Array a   -> array (t a)
@@ -369,6 +377,9 @@ module Equal = struct
   and tuple: type a. a tuple -> a equal = function
   | Pair (a, b)      -> pair (t a) (t b)
   | Triple (a, b, c) -> triple (t a) (t b) (t c)
+
+  and like: type a b. a t * (a -> b) * (b -> a) -> b equal =
+    fun (x, _, g) u v -> t x (g u) (g v)
 
   and prim: type a. a prim -> a equal = function
   | Unit   -> unit
@@ -466,6 +477,7 @@ module Compare = struct
 
   let rec t: type a. a t -> a compare = function
   | Self s    -> t s.self
+  | Like b    -> like b
   | Prim p    -> prim p
   | List l    -> list (t l)
   | Array a   -> array (t a)
@@ -477,6 +489,9 @@ module Compare = struct
   and tuple: type a. a tuple -> a compare = function
   | Pair (x,y)     -> pair (t x) (t y)
   | Triple (x,y,z) -> triple (t x) (t y) (t z)
+
+  and like: type a b. a t * (a -> b) * (b -> a) -> b compare =
+    fun (x, _, g) u v -> t x (g u) (g v)
 
   and prim: type a. a prim -> a compare = function
   | Unit   -> unit
@@ -549,6 +564,7 @@ module Size_of = struct
 
   let rec t: type a. a t -> a size_of = function
   | Self s    -> t s.self
+  | Like b    -> like b
   | Prim t    -> prim t
   | List l    -> list (t l)
   | Array a   -> array (t a)
@@ -560,6 +576,9 @@ module Size_of = struct
   and tuple: type a. a tuple -> a size_of = function
   | Pair (x,y)     -> pair (t x) (t y)
   | Triple (x,y,z) -> triple (t x) (t y) (t z)
+
+  and like: type a b. a t * (a -> b) * (b -> a) -> b size_of =
+    fun (x, _, g) u -> t x (g u)
 
   and prim: type a. a prim -> a size_of = function
   | Unit   -> unit
@@ -646,6 +665,7 @@ module Write = struct
 
   let rec t: type a. a t -> a write = function
   | Self s    -> t s.self
+  | Like b    -> like b
   | Prim t    -> prim t
   | List l    -> list (t l)
   | Array a   -> array (t a)
@@ -657,6 +677,9 @@ module Write = struct
   and tuple: type a. a tuple -> a write = function
   | Pair (x,y)     -> pair (t x) (t y)
   | Triple (x,y,z) -> triple (t x) (t y) (t z)
+
+  and like: type a b. a t * (a -> b) * (b -> a) -> b write =
+    fun (x, _, g) buf ~pos u -> t x buf ~pos (g u)
 
   and prim: type a. a prim -> a write = function
   | Unit   -> unit
@@ -756,6 +779,7 @@ module Read = struct
 
   let rec t: type a. a t -> a read = function
   | Self s    -> t s.self
+  | Like b    -> like b
   | Prim t    -> prim t
   | List l    -> list (t l)
   | Array a   -> array (t a)
@@ -767,6 +791,9 @@ module Read = struct
   and tuple: type a. a tuple -> a read = function
   | Pair (x,y)     -> pair (t x) (t y)
   | Triple (x,y,z) -> triple (t x) (t y) (t z)
+
+  and like: type a b. a t * (a -> b) * (b -> a) -> b read =
+    fun (x, f, _) buf ~pos -> t x buf ~pos >|= f
 
   and prim: type a. a prim -> a read = function
   | Unit   -> unit
@@ -852,6 +879,7 @@ module Encode_json = struct
 
   let rec t: type a. a t -> a encode_json = function
   | Self s    -> t s.self
+  | Like b    -> like b
   | Prim t    -> prim t
   | List l    -> list (t l)
   | Array a   -> array (t a)
@@ -863,6 +891,9 @@ module Encode_json = struct
   and tuple: type a. a tuple -> a encode_json = function
   | Pair (x,y)     -> pair (t x) (t y)
   | Triple (x,y,z) -> triple (t x) (t y) (t z)
+
+  and like: type a b. a t * (a -> b) * (b -> a) -> b encode_json =
+    fun (x, _, g) e u -> t x e (g u)
 
   and prim: type a. a prim -> a encode_json = function
   | Unit   -> unit
@@ -1045,6 +1076,7 @@ module Decode_json = struct
 
   let rec t: type a. a t -> a decode = function
   | Self s    -> t s.self
+  | Like b    -> like b
   | Prim t    -> prim t
   | List l    -> list (t l)
   | Array a   -> array (t a)
@@ -1056,6 +1088,9 @@ module Decode_json = struct
   and tuple: type a. a tuple -> a decode = function
   | Pair (x,y)     -> pair (t x) (t y)
   | Triple (x,y,z) -> triple (t x) (t y) (t z)
+
+  and like: type a b. a t * (a -> b) * (b -> a) -> b decode =
+    fun (x, f, _) e -> t x e >|= f
 
   and prim: type a. a prim -> a decode = function
   | Unit   -> unit

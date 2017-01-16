@@ -247,6 +247,17 @@ val mu2: ('a t -> 'b t -> 'a t * 'b t) -> 'a t * 'b t
       let r, z = mu2 (fun r z -> mkr z, mkz y)]}
 *)
 
+(** {1:proj Bijections}
+
+    Sometimes it is not always possible to describe precisely a type
+    (or it could be too tedious) and it is easier to describe the
+    relation with an other know type. This is what bijections are
+    about.
+*)
+
+val like: 'a t -> ('a -> 'b) -> ('b -> 'a) -> 'b t
+(** [like x f g] is the description of a type which looks like [x]
+    using the bijetion [(f, g)]. *)
 
 (** {1:generics Generic Operations}
 
