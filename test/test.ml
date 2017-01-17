@@ -71,7 +71,7 @@ let e4 = Tata
 let neg t =
   Alcotest.testable (Alcotest.pp t) (fun x y -> not (Alcotest.equal t x y))
 
-let test t = Alcotest.testable (pp t) (equal t)
+let test t = Alcotest.testable (dump t) (equal t)
 
 let test_equal () =
   Alcotest.(check @@ test r) __LOC__ r1 r1;
@@ -89,15 +89,15 @@ let test_equal () =
   Alcotest.(check @@ neg @@ test e) __LOC__ e1 e3
 
 let test_pp () =
-  Fmt.pr "PP: %a\n" (pp r) r1;
-  Fmt.pr "PP: %a\n" (pp r) r2;
-  Fmt.pr "PP: %a\n" (pp v) v1;
-  Fmt.pr "PP: %a\n" (pp v) v2;
-  Fmt.pr "PP: %a\n" (pp v) v3;
-  Fmt.pr "PP: %a\n" (pp e) e1;
-  Fmt.pr "PP: %a\n" (pp e) e2;
-  Fmt.pr "PP: %a\n" (pp e) e3;
-  Fmt.pr "PP: %a\n" (pp e) e4
+  Fmt.pr "PP: %a\n" (dump r) r1;
+  Fmt.pr "PP: %a\n" (dump r) r2;
+  Fmt.pr "PP: %a\n" (dump v) v1;
+  Fmt.pr "PP: %a\n" (dump v) v2;
+  Fmt.pr "PP: %a\n" (dump v) v3;
+  Fmt.pr "PP: %a\n" (dump e) e1;
+  Fmt.pr "PP: %a\n" (dump e) e2;
+  Fmt.pr "PP: %a\n" (dump e) e3;
+  Fmt.pr "PP: %a\n" (dump e) e4
 
 let test_pp_json () =
   Fmt.pr "PP-JSON: %a\n" (pp_json r) r1;
@@ -125,7 +125,7 @@ let test_bin_write () =
     let len = size_of t x in
     let buf = C (Cstruct.create len) in
     let len'= write t buf ~pos:0 x in
-    let msg = Fmt.strf "%a\n%s" (pp t) x in
+    let msg = Fmt.strf "%a\n%s" (dump t) x in
     Alcotest.(check int) (msg __LOC__) len len'
   in
   check r r1;

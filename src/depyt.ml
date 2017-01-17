@@ -258,7 +258,7 @@ module Refl = struct
 
 end
 
-module Pp = struct
+module Dump = struct
 
   let unit ppf () = Fmt.string ppf "()"
   let bool = Fmt.bool
@@ -322,7 +322,7 @@ module Pp = struct
 
 end
 
-let pp = Pp.t
+let dump = Dump.t
 
 type 'a equal = 'a -> 'a -> bool
 

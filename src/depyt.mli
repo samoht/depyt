@@ -266,8 +266,9 @@ val like: 'a t -> ('a -> 'b) -> ('b -> 'a) -> 'b t
     unparsing.
 *)
 
-val pp: 'a t -> 'a Fmt.t
-(** [pp t] is the pretty-printer for values of type [t]. *)
+val dump: 'a t -> 'a Fmt.t
+(** [dump t] dumps the values of type [t] as a parsable OCaml
+    expression. *)
 
 val equal: 'a t -> 'a -> 'a -> bool
 (** [equal t] is the equality function between values of type [t]. *)
@@ -295,7 +296,7 @@ val read: 'a t ->  buffer -> pos:int -> int * 'a
 (** {2 JSON converters} *)
 
 val pp_json: ?minify:bool -> 'a t -> 'a Fmt.t
-(** Similar to {!pp} but pretty-prints the JSON representation instead
+(** Similar to {!dump} but pretty-prints the JSON representation instead
     of the OCaml one. See {!encode_json} for details about the encoding.
 
     For instance:
