@@ -6,6 +6,8 @@
 
 open Depyt
 
+let int_like = like int (fun x -> x) (fun x -> x)
+
 type r = { foo: int; bar: string list; z: z option }
 and z = { x: int; r: r list }
 
@@ -41,7 +43,7 @@ let mkv v x =
     | Bar x       -> bar x
     | Yo (x, y) -> toto (x, y))
   |~ case0 "Foo" Foo
-  |~ case1 "Bar" int (fun x -> Bar x)
+  |~ case1 "Bar" int_like (fun x -> Bar x)
   |~ case1 "Yo" (pair x (option v)) (fun (x, y) -> Yo (x, y))
   |> sealv
 
@@ -62,10 +64,16 @@ let v3 =
 type my_e = Fooe | Bars | Toto | Tata
 let e = enum "e" ["Fooe", Fooe; "Bars", Bars; "Toto", Toto; "Tata", Tata]
 
+type y = [`E of my_e]
+let y = like e (fun e -> `E e) (fun (`E e) -> e)
+
 let e1 = Fooe
 let e2 = Bars
 let e3 = Toto
 let e4 = Tata
+
+let y1 = `E e1
+let y2 = `E e2
 
 (* FIXME: should go upstream *)
 let neg t =
@@ -86,7 +94,10 @@ let test_equal () =
   Alcotest.(check @@ neg @@ test v) __LOC__ v3 v1;
   Alcotest.(check @@ test e) __LOC__ e1 e1;
   Alcotest.(check @@ neg @@ test e) __LOC__ e1 e2;
-  Alcotest.(check @@ neg @@ test e) __LOC__ e1 e3
+  Alcotest.(check @@ neg @@ test e) __LOC__ e1 e3;
+  Alcotest.(check @@ test y) __LOC__ y1 y1;
+  Alcotest.(check @@ test y) __LOC__ y2 y2;
+  Alcotest.(check @@ neg @@ test y) __LOC__ y1 y2
 
 let test_pp () =
   Fmt.pr "PP: %a\n" (dump r) r1;
@@ -97,7 +108,8 @@ let test_pp () =
   Fmt.pr "PP: %a\n" (dump e) e1;
   Fmt.pr "PP: %a\n" (dump e) e2;
   Fmt.pr "PP: %a\n" (dump e) e3;
-  Fmt.pr "PP: %a\n" (dump e) e4
+  Fmt.pr "PP: %a\n" (dump y) y1;
+  Fmt.pr "PP: %a\n" (dump y) y2
 
 let test_pp_json () =
   Fmt.pr "PP-JSON: %a\n" (pp_json r) r1;
@@ -108,7 +120,9 @@ let test_pp_json () =
   Fmt.pr "PP-JSON: %a\n" (pp_json e) e1;
   Fmt.pr "PP-JSON: %a\n" (pp_json e) e2;
   Fmt.pr "PP-JSON: %a\n" (pp_json e) e3;
-  Fmt.pr "PP-JSON: %a\n" (pp_json e) e4
+  Fmt.pr "PP-JSON: %a\n" (pp_json e) e4;
+  Fmt.pr "PP-JSON: %a\n" (pp_json y) y1;
+  Fmt.pr "PP-JSON: %a\n" (pp_json y) y2
 
 let test_compare () =
   Alcotest.(check int) __LOC__ (compare r r1 r2) ~-1;
@@ -118,7 +132,8 @@ let test_compare () =
   Alcotest.(check int) __LOC__ (compare e e1 e2) ~-1;
   Alcotest.(check int) __LOC__ (compare e e2 e3) ~-1;
   Alcotest.(check int) __LOC__ (compare e e3 e4) ~-1;
-  Alcotest.(check int) __LOC__ (compare e e4 e1) 1
+  Alcotest.(check int) __LOC__ (compare e e4 e1) 1;
+  Alcotest.(check int) __LOC__ (compare y y1 y2) ~-1
 
 let test_bin_write () =
   let check t x =
@@ -135,7 +150,9 @@ let test_bin_write () =
   check v v3;
   check e e1;
   check e e2;
-  check e e3
+  check e e3;
+  check y y1;
+  check y y2
 
 let test_bin_read () =
   let check t x =
@@ -154,7 +171,9 @@ let test_bin_read () =
   check v v3;
   check e e1;
   check e e2;
-  check e e3
+  check e e3;
+  check y y1;
+  check y y2
 
 let test_parse_json () =
   let check t x =
@@ -172,7 +191,9 @@ let test_parse_json () =
   check v v3;
   check e e1;
   check e e2;
-  check e e3
+  check e e3;
+  check y y1;
+  check y y2
 
 let () =
   Alcotest.run "depyt" [

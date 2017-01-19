@@ -39,7 +39,7 @@ end
 
 type _ t =
   | Self   : 'a self -> 'a t
-  | Like   : ('a t * ('a -> 'b) * ('b -> 'a)) -> 'b t
+  | Like   : ('a, 'b) like -> 'b t
   | Prim   : 'a prim -> 'a t
   | List   : 'a t -> 'a list t
   | Array  : 'a t -> 'a array t
@@ -47,6 +47,13 @@ type _ t =
   | Option : 'a t -> 'a option t
   | Record : 'a record -> 'a t
   | Variant: 'a variant -> 'a t
+
+and ('a, 'b) like = {
+  x: 'a t;
+  f: ('a -> 'b);
+  g: ('b -> 'a);
+  lwit: 'b Witness.t;
+}
 
 and 'a self = {
   mutable self: 'a t;
@@ -115,6 +122,44 @@ and ('a, 'b) case1 = {
 
 type _ a_field = Field: ('a, 'b) field -> 'a a_field
 
+module Refl = struct
+
+  let prim: type a b. a prim -> b prim -> (a, b) eq option = fun a b ->
+    match a, b with
+    | Unit  , Unit   -> Some Refl
+    | Int   , Int    -> Some Refl
+    | String, String -> Some Refl
+    | _ -> None
+
+  let rec eq: type a b. a t -> b t -> (a, b) eq option = fun a b ->
+    match a, b with
+    | Self a, b -> eq a.self b
+    | a, Self b -> eq a b.self
+    | Like a, Like b -> Witness.eq a.lwit b.lwit
+    | Prim a, Prim b -> prim a b
+    | List a, List b ->
+        (match eq a b with Some Refl -> Some Refl | None -> None)
+    | Tuple a, Tuple b -> tuple a b
+    | Option a, Option b ->
+        (match eq a b with Some Refl -> Some Refl | None -> None)
+    | Record a, Record b   -> Witness.eq a.rwit b.rwit
+    | Variant a, Variant b -> Witness.eq a.vwit b.vwit
+    | _ -> None
+
+  and tuple: type a b. a tuple -> b tuple -> (a, b) eq option = fun a b ->
+    match a, b with
+    | Pair (a0, a1), Pair (b0, b1) ->
+        (match eq a0 b0, eq a1 b1 with
+        | Some Refl, Some Refl -> Some Refl
+        | _ -> None)
+    | Triple (a0, a1, a2), Triple (b0, b1, b2) ->
+        (match eq a0 b0, eq a1 b1, eq a2 b2 with
+        | Some Refl, Some Refl, Some Refl -> Some Refl
+        | _ -> None)
+    | _ -> None
+
+end
+
 let unit = Prim Unit
 let bool = Prim Bool
 let char = Prim Char
@@ -130,7 +175,8 @@ let pair a b = Tuple (Pair (a, b))
 let triple a b c = Tuple (Triple (a, b, c))
 let option a = Option a
 
-let like x f g = Like (x, f, g)
+let like (type a b) (x: a t) (f: a -> b) (g: b -> a) =
+  Like { x; f; g; lwit = Witness.make () }
 
 (* fix points *)
 
@@ -221,43 +267,6 @@ let rec fields_aux: type a b. (a, b) fields -> a a_field list = function
 let fields r = match r.rfields with
 | Fields (f, _) -> fields_aux f
 
-module Refl = struct
-
-  let prim: type a b. a prim -> b prim -> (a, b) eq option = fun a b ->
-    match a, b with
-    | Unit  , Unit   -> Some Refl
-    | Int   , Int    -> Some Refl
-    | String, String -> Some Refl
-    | _ -> None
-
-  let rec eq: type a b. a t -> b t -> (a, b) eq option = fun a b ->
-    match a, b with
-    | Self a, b  -> eq a.self b
-    | a, Self b  -> eq a b.self
-    | Prim a, Prim b -> prim a b
-    | List a, List b ->
-        (match eq a b with Some Refl -> Some Refl | None -> None)
-    | Tuple a, Tuple b -> tuple a b
-    | Option a, Option b ->
-        (match eq a b with Some Refl -> Some Refl | None -> None)
-    | Record a, Record b   -> Witness.eq a.rwit b.rwit
-    | Variant a, Variant b -> Witness.eq a.vwit b.vwit
-    | _ -> None
-
-  and tuple: type a b. a tuple -> b tuple -> (a, b) eq option = fun a b ->
-    match a, b with
-    | Pair (a0, a1), Pair (b0, b1) ->
-        (match eq a0 b0, eq a1 b1 with
-        | Some Refl, Some Refl -> Some Refl
-        | _ -> None)
-    | Triple (a0, a1, a2), Triple (b0, b1, b2) ->
-        (match eq a0 b0, eq a1 b1, eq a2 b2 with
-        | Some Refl, Some Refl, Some Refl -> Some Refl
-        | _ -> None)
-    | _ -> None
-
-end
-
 module Dump = struct
 
   let unit ppf () = Fmt.string ppf "()"
@@ -289,8 +298,8 @@ module Dump = struct
   | Pair (x,y)     -> pair (t x) (t y)
   | Triple (x,y,z) -> triple (t x) (t y) (t z)
 
-  and like: type a b. a t * (a -> b) * (b -> a) -> b Fmt.t =
-    fun (x, _, g) ppf b -> t x ppf (g b)
+  and like: type a b. (a, b) like -> b Fmt.t =
+    fun {x; g; _ } ppf b -> t x ppf (g b)
 
   and prim: type a. a prim -> a Fmt.t = function
   | Unit   -> unit
@@ -378,8 +387,8 @@ module Equal = struct
   | Pair (a, b)      -> pair (t a) (t b)
   | Triple (a, b, c) -> triple (t a) (t b) (t c)
 
-  and like: type a b. a t * (a -> b) * (b -> a) -> b equal =
-    fun (x, _, g) u v -> t x (g u) (g v)
+  and like: type a b. (a, b) like -> b equal =
+    fun { x; g; _ } u v -> t x (g u) (g v)
 
   and prim: type a. a prim -> a equal = function
   | Unit   -> unit
@@ -490,8 +499,8 @@ module Compare = struct
   | Pair (x,y)     -> pair (t x) (t y)
   | Triple (x,y,z) -> triple (t x) (t y) (t z)
 
-  and like: type a b. a t * (a -> b) * (b -> a) -> b compare =
-    fun (x, _, g) u v -> t x (g u) (g v)
+  and like: type a b. (a, b) like -> b compare =
+    fun { x; g; _ } u v -> t x (g u) (g v)
 
   and prim: type a. a prim -> a compare = function
   | Unit   -> unit
@@ -577,8 +586,8 @@ module Size_of = struct
   | Pair (x,y)     -> pair (t x) (t y)
   | Triple (x,y,z) -> triple (t x) (t y) (t z)
 
-  and like: type a b. a t * (a -> b) * (b -> a) -> b size_of =
-    fun (x, _, g) u -> t x (g u)
+  and like: type a b. (a, b) like -> b size_of =
+    fun { x; g; _ } u -> t x (g u)
 
   and prim: type a. a prim -> a size_of = function
   | Unit   -> unit
@@ -678,8 +687,8 @@ module Write = struct
   | Pair (x,y)     -> pair (t x) (t y)
   | Triple (x,y,z) -> triple (t x) (t y) (t z)
 
-  and like: type a b. a t * (a -> b) * (b -> a) -> b write =
-    fun (x, _, g) buf ~pos u -> t x buf ~pos (g u)
+  and like: type a b. (a, b) like -> b write =
+    fun { x; g; _ } buf ~pos u -> t x buf ~pos (g u)
 
   and prim: type a. a prim -> a write = function
   | Unit   -> unit
@@ -792,8 +801,8 @@ module Read = struct
   | Pair (x,y)     -> pair (t x) (t y)
   | Triple (x,y,z) -> triple (t x) (t y) (t z)
 
-  and like: type a b. a t * (a -> b) * (b -> a) -> b read =
-    fun (x, f, _) buf ~pos -> t x buf ~pos >|= f
+  and like: type a b. (a, b) like -> b read =
+    fun { x; f; _ } buf ~pos -> t x buf ~pos >|= f
 
   and prim: type a. a prim -> a read = function
   | Unit   -> unit
@@ -892,8 +901,8 @@ module Encode_json = struct
   | Pair (x,y)     -> pair (t x) (t y)
   | Triple (x,y,z) -> triple (t x) (t y) (t z)
 
-  and like: type a b. a t * (a -> b) * (b -> a) -> b encode_json =
-    fun (x, _, g) e u -> t x e (g u)
+  and like: type a b. (a, b) like -> b encode_json =
+    fun { x; g; _ } e u -> t x e (g u)
 
   and prim: type a. a prim -> a encode_json = function
   | Unit   -> unit
@@ -1089,8 +1098,8 @@ module Decode_json = struct
   | Pair (x,y)     -> pair (t x) (t y)
   | Triple (x,y,z) -> triple (t x) (t y) (t z)
 
-  and like: type a b. a t * (a -> b) * (b -> a) -> b decode =
-    fun (x, f, _) e -> t x e >|= f
+  and like: type a b. (a, b) like -> b decode =
+    fun { x; f; _ } e -> t x e >|= f
 
   and prim: type a. a prim -> a decode = function
   | Unit   -> unit
