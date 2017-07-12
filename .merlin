@@ -1,4 +1,0 @@
-PKG bytes cstruct fmt result alcotest jsonm ocplib-endian
-S src
-S test
-B _build/**

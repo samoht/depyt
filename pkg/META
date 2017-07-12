@@ -1,7 +1,0 @@
-description = "Yet-an-other type combinator library"
-version = "%%VERSION_NUM%%"
-requires = "cstruct fmt result jsonm"
-archive(byte) = "depyt.cma"
-archive(native) = "depyt.cmxa"
-plugin(byte) = "depyt.cma"
-plugin(native) = "depyt.cmxs"

@@ -1,11 +1,13 @@
-.PHONY: all clean doc
+.PHONY: all clean doc test
 
 all:
-	ocaml pkg/pkg.ml build --tests true
-	ocaml pkg/pkg.ml test
+	jbuilder build --dev
 
-clean:
-	ocaml pkg/pkg.ml clean
+test:
+	jbuilder runtest --dev
 
 doc:
-	topkg doc -r
+	jbuilder build @doc
+
+clean:
+	jbuilder clean

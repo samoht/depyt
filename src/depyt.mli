@@ -346,6 +346,10 @@ val decode_json: 'a t -> Jsonm.decoder -> ('a, string) Result.result
 (** [decode_json t e] decodes values of type [t] from the
     {{:http://erratique.ch/software/jsonm}jsonm} decoder [e]. *)
 
+val decode_json_lexemes: 'a t -> Jsonm.lexeme list -> ('a, string) Result.result
+(** [decode_json_lexemes] is similar to {!decode_json} but use an
+    already decoded list of JSON lexemes instead of a decoder. *)
+
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Thomas Gazagnaire
 
