@@ -1172,7 +1172,7 @@ module Decode_json = struct
 end
 
 let decode_json x d = Decode_json.(t x @@ decoder d)
-
+let decode_json_lexemes x ls = Decode_json.(t x @@ of_lexemes ls)
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Thomas Gazagnaire
