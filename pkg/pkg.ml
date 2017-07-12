@@ -1,3 +1,3 @@
 #!/usr/bin/env ocaml
 #use "topfind"
-#require "topkg-jbuilder"
+#require "topkg-jbuilder.auto"
