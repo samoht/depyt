@@ -8,3 +8,10 @@
   ((name runtest)
    (deps (test.exe))
    (action (run ${^} --color=always))))
+
+; (alias
+; ((name runtest)
+;  (deps (../README.md (package depyt)))
+;  (action (progn
+;           (run mdx test ${<})
+;           (diff? ${<} ${<}.corrected)))))

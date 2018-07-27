@@ -23,22 +23,22 @@ between intermediate formats.
 For instance, to define variants:
 
 ```ocaml
+# #require "depyt";;
 # open Depyt;;
 # type t = Foo | Bar of string option;;
+type t = Foo | Bar of string option
 # let t =
-    variant "v" (fun foo bar -> function Foo -> foo | Bar x -> bar)
+    variant "v" (fun foo bar -> function Foo -> foo | Bar x -> bar x)
     |~ case0 "Foo" Foo
     |~ case1 "Bar" (option string) (fun x -> Bar x)
     |> sealv
+    ;;
 val t : t Depyt.t = <abstr>
-
-# Fmt.pr "t = %a\n" (pp t) Foo;;
+# Fmt.pr "t = %a\n%!" (dump t) Foo;;
 t = Foo
 - : unit = ()
-
 # compare t Foo (Bar (Some "a"));;
 - : int = -1
-
 # compare t Foo (Bar (Some "a"));;
 - : int = -1
 ```
@@ -48,21 +48,20 @@ t = Foo
 To define records:
 
 ```ocaml
-# open Depyt;;
 # type t = { foo: int option; bar: string list };;
+type t = { foo : int option; bar : string list; }
 # let t =
     record "r" (fun foo bar -> { foo; bar })
     |+ field "foo" (option int) (fun t -> t.foo)
     |+ field "bar" (list string) (fun t -> t.bar)
     |> sealr
-va t : t Depyt.t = <abstr>
-
-# Fmt.pr "%a\n" (pp t) { foo = Som 3; bar = ["foo"] };;
+    ;;
+val t : t Depyt.t = <abstr>
+# Fmt.pr "%a\n%!" (dump t) { foo = Some 3; bar = ["foo"] };;
 { foo = Some 3; bar = ["foo"]; }
 - : unit = ()
-
-(* [None] fields do not appear in the generated JSON *)
-# Fmt.pr "%a\n" (pp_json t) { foo = None; bar = ["1";"2"] };;
+# (* [None] fields do not appear in the generated JSON *)
+# Fmt.pr "%a\n%!" (pp_json t) { foo = None; bar = ["1";"2"] };;
 {"bar":["1","2"]}
 - : unit = ()
 ```
