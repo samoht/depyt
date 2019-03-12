@@ -1,6 +1,0 @@
-(jbuild_version 1)
-
-(library
-  ((name        depyt)
-   (public_name depyt)
-   (libraries   (cstruct fmt result jsonm ocplib-endian))))
