@@ -1,13 +1,12 @@
-(jbuild_version 1)
-
 (executable
-  ((name test)
-   (libraries (alcotest depyt))))
+ (name test)
+ (libraries alcotest depyt))
 
 (alias
-  ((name runtest)
-   (deps (test.exe))
-   (action (run ${^} --color=always))))
+ (name runtest)
+ (deps test.exe)
+ (action
+  (run %{deps} --color=always)))
 
 ; (alias
 ; ((name runtest)
