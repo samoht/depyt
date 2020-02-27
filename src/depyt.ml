@@ -959,8 +959,6 @@ let pp_json ?minify t ppf x =
 
 module Decode_json = struct
 
-  open Result
-
   type decoder = {
     mutable lexemes: Jsonm.lexeme list;
     d: Jsonm.decoder;
