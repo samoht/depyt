@@ -16,7 +16,7 @@ build-test: ["dune" "runtest" "-p" name "-j" jobs]
 
 depends: [
   "dune" {build & >= "1.0"}
-  "cstruct" "fmt" "result" "jsonm"
+  "cstruct" "fmt" "jsonm"
   "ocplib-endian" {>="0.7"}
   "alcotest" {test}
 ]
