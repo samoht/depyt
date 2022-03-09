@@ -430,12 +430,12 @@ type 'a compare = 'a -> 'a -> int
 module Compare = struct
 
   let unit (_:unit) (_:unit) = 0
-  let bool (x:bool) (y:bool) = Pervasives.compare x y
+  let bool (x:bool) (y:bool) = Stdlib.compare x y
   let char = Char.compare
-  let int (x:int) (y:int) = Pervasives.compare x y
+  let int (x:int) (y:int) = Stdlib.compare x y
   let int32 = Int32.compare
   let int64 = Int64.compare
-  let float (x:float) (y:float) = Pervasives.compare x y
+  let float (x:float) (y:float) = Stdlib.compare x y
   let string x y = if x == y then 0 else String.compare x y
 
   let list c x y =
