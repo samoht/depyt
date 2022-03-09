@@ -753,7 +753,7 @@ module Read = struct
     int buf ~pos >>= fun (pos, len) ->
     let str = Bytes.create len in
     let () = match buf with
-    | C buf -> Cstruct.blit_to_string buf pos str 0 len
+    | C buf -> Cstruct.blit_to_bytes buf pos str 0 len
     | B buf -> Bytes.blit buf pos str 0 len
     in
     ok (pos+len) (Bytes.unsafe_to_string str)
@@ -989,7 +989,7 @@ module Decode_json = struct
 
   let error e got expected =
     let _, (l, c) = Jsonm.decoded_range e.d in
-    Error (Fmt.strf
+    Error (Fmt.str
              "line %d, character %d:\nFound lexeme %a, but \
               lexeme %s was expected" l c Jsonm.pp_lexeme got expected)
 
@@ -1133,7 +1133,7 @@ module Decode_json = struct
             match h.ftype with
             | Option _ -> Ok None
             | _        ->
-                Error (Fmt.strf "missing value for %s.%s" r.rname h.fname)
+                Error (Fmt.str "missing value for %s.%s" r.rname h.fname)
           in
           match v with
           | Ok v         -> aux f (c v)
