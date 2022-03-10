@@ -1,3 +1,7 @@
+### 0.3.0 (2022-03-10)
+
+- Add support for OCaml 4.14 and 5.00 (#22, @kit-ty-kate)
+
 ### 0.2.0 (2016-07-12)
 
 - add `like` to describe similar/bijective types (@samoht)

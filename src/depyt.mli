@@ -310,10 +310,10 @@ val pp_json: ?minify:bool -> 'a t -> 'a Fmt.t
         |+ field "bar" (list string) (fun t -> t.bar)
         |> sealr
 
-      let s = Fmt.strf "%a\n" (pp t) { foo = None; bar = ["foo"] }
+      let s = Fmt.str "%a\n" (pp t) { foo = None; bar = ["foo"] }
       (* s is "{ foo = None; bar = [\"foo\"]; }" *)
 
-      let j = Fmt.strf "%a\n" (pp_json t) { foo = None; bar = ["foo"] }
+      let j = Fmt.str "%a\n" (pp_json t) { foo = None; bar = ["foo"] }
       (* j is "{ \"bar\":[\"foo\"] }" *)]}
 
     {b NOTE:} this will automatically convert JSON fragments to valid
