@@ -140,7 +140,7 @@ let test_bin_write () =
     let len = size_of t x in
     let buf = C (Cstruct.create len) in
     let len'= write t buf ~pos:0 x in
-    let msg = Fmt.strf "%a\n%s" (dump t) x in
+    let msg = Fmt.str "%a\n%s" (dump t) x in
     Alcotest.(check int) (msg __LOC__) len len'
   in
   check r r1;
