@@ -1,13 +1,13 @@
 .PHONY: all clean doc test
 
 all:
-	jbuilder build --dev
+	dune build
 
 test:
-	jbuilder runtest --dev
+	dune runtest
 
 doc:
-	jbuilder build @doc
+	dune build @doc
 
 clean:
-	jbuilder clean
+	dune clean
